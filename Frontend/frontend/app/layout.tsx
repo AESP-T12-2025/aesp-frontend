@@ -1,22 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import Link from "next/link"; 
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const inter = Inter({
+  subsets: ["latin", "vietnamese"],
+  variable: "--font-inter",
 });
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "AESP - AI English Speaking Platform",
-  description: "Hệ thống luyện phát âm tiếng Anh với AI",
-};
 
 export default function RootLayout({
   children,
@@ -24,37 +14,36 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        
-        {/* Thanh Điều Hướng (Navbar) */}
-        <nav className="flex items-center justify-between px-10 py-4 bg-blue-600 text-white shadow-md">
-          <div className="flex gap-8">
-            <Link href="/login" className="hover:text-yellow-300 font-bold transition-colors">
-              Đăng Nhập
-            </Link>
-            <Link href="/register" className="hover:text-yellow-300 font-bold transition-colors">
-              Đăng Ký
-            </Link>
-          </div>
-          
-          <div className="text-right">
-            <span className="text-sm italic text-blue-100 uppercase tracking-widest">
-              Hệ Thống AESP
+    <html lang="vi"> 
+      <body className={`${inter.className} antialiased`}>
+        {/* Header với border bottom màu xám nhẹ #eee từ ảnh của bạn */}
+        <header className="flex justify-between items-center px-[5%] py-[0.8rem] bg-white border-b border-[#eee] sticky top-0 z-[100]">
+          <Link href="/" className="flex flex-col leading-[1.2]">
+            <span className="text-[1.8rem] font-bold text-[#007bff] tracking-[1px]">
+              AESP
             </span>
+            <span className="text-[0.7rem] font-[600] text-[#6c757d] uppercase">
+              AI English Speaking Platform
+            </span>
+          </Link>
+          
+          <div className="flex gap-3">
+            <Link href="/login">
+              <button className="px-[1.2rem] py-[0.6rem] rounded-[8px] border border-[#007bff] text-[#007bff] font-bold hover:bg-blue-50 transition-all">
+                Đăng nhập
+              </button>
+            </Link>
+            <Link href="/register">
+              <button className="px-[1.2rem] py-[0.6rem] rounded-[8px] bg-[#007bff] text-white font-bold hover:bg-blue-600 transition-all">
+                Đăng ký
+              </button>
+            </Link>
           </div>
-        </nav>
+        </header>
 
-        {/* Nội dung chính của các trang */}
         <main className="min-h-screen bg-gray-50">
           {children}
         </main>
-        
-        {/* Bạn có thể thêm Footer ở đây nếu cần */}
-        <footer className="py-6 text-center text-gray-400 text-sm bg-white border-t">
-          © 2025 AESP Project - AI English Speaking Platform
-        </footer>
-
       </body>
     </html>
   );
