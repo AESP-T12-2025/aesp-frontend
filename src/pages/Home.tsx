@@ -1,5 +1,5 @@
+import { Link } from 'react-router-dom'; 
 import { MOCK_CATEGORIES } from '../data/mockData';
-
 
 const Home = () => {
   return (
@@ -30,14 +30,29 @@ const Home = () => {
           }}>
             {cat.topics.map(topic => (
               <div key={topic.id} className="topic-card">
-                
                 <div style={{ fontSize: '4.5rem', marginBottom: '15px', filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.1))' }}>
                   {topic.image}
                 </div>
-                <div style={{ fontWeight: 'bold', fontSize: '1.25rem', color: '#2c3e50' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '1.25rem', color: '#2c3e50', marginBottom: '15px' }}>
                   {topic.name}
                 </div>
-                <button className="study-button">Luyện nói ngay</button>
+
+                
+                <Link 
+                  to={`/practice/${topic.id}`} 
+                  className="study-button"
+                  style={{
+                    display: 'inline-block',
+                    textDecoration: 'none',
+                    padding: '10px 20px',
+                    backgroundColor: '#007bff',
+                    color: '#fff',
+                    borderRadius: '8px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Luyện nói ngay
+                </Link>
               </div>
             ))}
           </div>

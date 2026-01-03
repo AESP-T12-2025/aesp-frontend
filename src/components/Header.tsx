@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 const Header = () => {
   return (
     <header style={{ 
@@ -11,7 +13,8 @@ const Header = () => {
       top: 0,
       zIndex: 100
     }}>
-      <div style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer', lineHeight: '1.2' }}>
+      {/* 2. Bọc Logo bằng Link để bấm vào là về Trang chủ */}
+      <Link to="/" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
         <span style={{ 
           fontSize: '1.8rem', 
           fontWeight: 'bold', 
@@ -28,18 +31,24 @@ const Header = () => {
         }}>
           AI English Speaking Platform
         </span>
-      </div>
+      </Link>
 
-      
       <nav>
         <ul style={{ display: 'flex', gap: '2rem', listStyle: 'none', margin: 0, padding: 0 }}>
-          <li style={{ cursor: 'pointer', fontWeight: '500' }}>Trang chủ</li>
-          <li style={{ cursor: 'pointer', fontWeight: '500' }}>Luyện tập</li>
-          <li style={{ cursor: 'pointer', fontWeight: '500' }}>Lộ trình</li>
+          <li>
+            <Link to="/" style={{ textDecoration: 'none', color: '#333', fontWeight: '500' }}>Trang chủ</Link>
+          </li>
+          <li>
+            <Link to="/scenarios" style={{ textDecoration: 'none', color: '#333', fontWeight: '500' }}>
+  Luyện tập
+</Link>
+          </li>
+          <li>
+            <Link to="#" style={{ textDecoration: 'none', color: '#333', fontWeight: '500' }}>Lộ trình</Link>
+          </li>
         </ul>
       </nav>
 
-      
       <div style={{ display: 'flex', gap: '12px' }}>
         <button style={{ 
           padding: '0.6rem 1.2rem', borderRadius: '8px', border: '1px solid #007bff', 
