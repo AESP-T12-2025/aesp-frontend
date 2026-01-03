@@ -127,20 +127,88 @@ document.addEventListener('DOMContentLoaded', function() {
             'statistics': {
                 title: 'Statistics & Reports',
                 subtitle: 'View statistics and generate reports.'
+            },
+            'topics': {
+                title: 'Topic/Scenario Management',
+                subtitle: 'Quản lý bài học (Topic/Scenario) cho người học.'
             }
         };
+
+        // Hide/show dashboard stats based on page
+        const dashboardContent = document.querySelector('.dashboard-content');
+        if (dashboardContent) {
+            if (page === 'dashboard') {
+                dashboardContent.style.display = 'grid';
+            } else {
+                dashboardContent.style.display = 'none';
+            }
+        }
 
         if (pageData[page] && pageTitle && pageSubtitle && pageContent) {
             pageTitle.textContent = pageData[page].title;
             pageSubtitle.textContent = pageData[page].subtitle;
             
-            // You can load different content here based on the page
-            pageContent.innerHTML = `
-                <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);">
-                    <h2 style="margin-bottom: 20px; color: #111827;">${pageData[page].title}</h2>
-                    <p style="color: #6b7280;">Content for ${pageData[page].title} will be displayed here.</p>
-                </div>
-            `;
+            // Load specific content based on page
+            if (page === 'users') {
+                if (window.UserManagement && window.UserManagement.render) {
+                    window.UserManagement.render();
+                }
+            } else if (page === 'mentors') {
+                if (window.MentorManagement && window.MentorManagement.render) {
+                    window.MentorManagement.render();
+                }
+            } else if (page === 'mentor-skills') {
+                if (window.MentorSkills && window.MentorSkills.render) {
+                    window.MentorSkills.render();
+                }
+            } else if (page === 'enable-disable') {
+                if (window.EnableDisable && window.EnableDisable.render) {
+                    window.EnableDisable.render();
+                }
+            } else if (page === 'packages') {
+                if (window.Packages && window.Packages.render) {
+                    window.Packages.render();
+                }
+            } else if (page === 'purchases') {
+                if (window.Purchases && window.Purchases.render) {
+                    window.Purchases.render();
+                }
+            } else if (page === 'purchase-history') {
+                if (window.PurchaseHistory && window.PurchaseHistory.render) {
+                    window.PurchaseHistory.render();
+                }
+            } else if (page === 'support') {
+                if (window.Support && window.Support.render) {
+                    window.Support.render();
+                }
+            } else if (page === 'feedback') {
+                if (window.Feedback && window.Feedback.render) {
+                    window.Feedback.render();
+                }
+            } else if (page === 'policies') {
+                if (window.Policies && window.Policies.render) {
+                    window.Policies.render();
+                }
+            } else if (page === 'statistics') {
+                if (window.Statistics && window.Statistics.render) {
+                    window.Statistics.render();
+                }
+            } else if (page === 'topics') {
+                if (window.TopicScenario && window.TopicScenario.render) {
+                    window.TopicScenario.render();
+                }
+            } else if (page === 'dashboard') {
+                // Clear page content for dashboard as stats are shown separately
+                pageContent.innerHTML = '';
+            } else {
+                // Default content for other pages
+                pageContent.innerHTML = `
+                    <div class="page-container">
+                        <h2 style="margin-bottom: 20px; color: #111827;">${pageData[page].title}</h2>
+                        <p style="color: #6b7280;">Content for ${pageData[page].title} will be displayed here.</p>
+                    </div>
+                `;
+            }
         }
     }
 
@@ -191,4 +259,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
 

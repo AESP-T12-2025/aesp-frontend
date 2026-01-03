@@ -1,0 +1,151 @@
+/* Service Packages & Pricing Styles */
+.packages-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.packages-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.packages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+    margin-bottom: 25px;
+}
+
+.package-card {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 25px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.package-card:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.package-card.featured {
+    border-color: #3b82f6;
+    border-width: 3px;
+}
+
+.package-card.featured::before {
+    content: 'Popular';
+    position: absolute;
+    top: -12px;
+    right: 20px;
+    background: #3b82f6;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.package-header {
+    margin-bottom: 20px;
+}
+
+.package-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px 0;
+}
+
+.package-description {
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.package-price {
+    margin: 20px 0;
+    padding: 20px 0;
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.package-price-amount {
+    font-size: 36px;
+    font-weight: 700;
+    color: #111827;
+    display: flex;
+    align-items: start;
+    gap: 4px;
+}
+
+.package-price-currency {
+    font-size: 20px;
+    margin-top: 4px;
+}
+
+.package-price-period {
+    font-size: 14px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.package-features {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+}
+
+.package-features li {
+    padding: 10px 0;
+    display: flex;
+    align-items: start;
+    gap: 10px;
+    color: #374151;
+    font-size: 14px;
+}
+
+.package-features li i {
+    color: #10b981;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.package-actions {
+    margin-top: 20px;
+}
+
+.package-stats {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e5e7eb;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.package-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .packages-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+
