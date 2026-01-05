@@ -15,9 +15,13 @@ export default function UsersPage() {
         try {
             const response = await api.get("/users");
             setUsers(response.data);
-        } catch (err) {
-            setError("Failed to fetch users");
-            console.error(err);
+        } catch (err: any) {
+            console.error("Fetch users error:", err);
+            setError(
+                err.response?.data?.detail ||
+                err.message ||
+                "Failed to fetch users. Check console for details."
+            );
         } finally {
             setLoading(false);
         }
