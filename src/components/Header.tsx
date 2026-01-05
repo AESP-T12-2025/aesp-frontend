@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import Link from "next/link";
 
 const Header = () => {
   return (
@@ -14,7 +14,7 @@ const Header = () => {
       zIndex: 100
     }}>
       {/* 2. Bọc Logo bằng Link để bấm vào là về Trang chủ */}
-      <Link to="/" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
+      <Link href="/" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
         <span style={{ 
           fontSize: '1.8rem', 
           fontWeight: 'bold', 
@@ -36,15 +36,15 @@ const Header = () => {
       <nav>
         <ul style={{ display: 'flex', gap: '2rem', listStyle: 'none', margin: 0, padding: 0 }}>
           <li>
-            <Link to="/" style={{ textDecoration: 'none', color: '#333', fontWeight: '500' }}>Trang chủ</Link>
+            <Link href="/" style={{ textDecoration: 'none', color: '#333', fontWeight: '500' }}>Trang chủ</Link>
           </li>
           <li>
-            <Link to="/scenarios" style={{ textDecoration: 'none', color: '#333', fontWeight: '500' }}>
+            <Link href="/scenarios" style={{ textDecoration: 'none', color: '#333', fontWeight: '500' }}>
   Luyện tập
 </Link>
           </li>
           <li>
-            <Link to="#" style={{ textDecoration: 'none', color: '#333', fontWeight: '500' }}>Lộ trình</Link>
+            <Link href="#" style={{ textDecoration: 'none', color: '#333', fontWeight: '500' }}>Lộ trình</Link>
           </li>
         </ul>
       </nav>
