@@ -11,6 +11,11 @@ export const practiceService = {
     return res.data;
   },
 
+  getScenarioDetail: async (scenarioId: string | number) => {
+    const res = await api.get(`/scenarios/${scenarioId}`);
+    return res.data;
+  },
+
   startSession: async (scenarioId: string) => {
     const res = await api.post('/speaking-sessions', { 
       scenario_id: Number(scenarioId) 
@@ -18,7 +23,7 @@ export const practiceService = {
     return res.data;
   },
 
-  // THÊM HÀM NÀY ĐỂ HẾT LỖI Ở PracticePage.tsx
+  
   submitAudio: async (sessionId: number, audioBlob: Blob) => {
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.wav');

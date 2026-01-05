@@ -31,8 +31,7 @@ export const scenarioService = {
     return res.data;
   },
 
-  startSpeakingSession: async (scenarioId: string | number) => {
-    // Lưu ý: api.post này sẽ tự đính kèm Token nếu bạn đã setup interceptor cho axios
+  startSpeakingSession: async (scenarioId: string | number) => {  
     const res = await api.post('/speaking-sessions', { 
       scenario_id: scenarioId 
     });
