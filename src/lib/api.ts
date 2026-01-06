@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Default to localhost:8000 if not specified in env
-const API_URL = "https://aesp-backend.onrender.com";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
 const api = axios.create({
     baseURL: API_URL,

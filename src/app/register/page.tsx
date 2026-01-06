@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { Mail, Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, Loader2, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState('LEARNER'); // Default to Learner
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function RegisterPage() {
         email: email.trim(),
         full_name: fullName.trim(),
         password: password,
+        role: role, // Send selected role
       });
 
       if (response.status === 201 || response.status === 200) {
@@ -31,8 +33,22 @@ export default function RegisterPage() {
         router.push('/login');
       }
     } catch (error: any) {
+      console.error("Register Error:", error);
+      const status = error.response?.status;
       const detail = error.response?.data?.detail;
-      toast.error("Lỗi đăng ký: " + (Array.isArray(detail) ? detail[0]?.msg : detail || "Email đã tồn tại"));
+
+      let message = "Đăng ký thất bại";
+      if (detail) {
+        message = Array.isArray(detail) ? detail[0]?.msg : detail;
+      } else if (status === 500) {
+        message = "Lỗi Server (500). Vui lòng thử lại sau.";
+      } else if (status === 409) {
+        message = "Email đã tồn tại";
+      } else {
+        message = error.message || "Lỗi kết nối";
+      }
+
+      toast.error(`Lỗi (${status || '?'}) : ${message}`);
     } finally {
       setIsLoading(false);
     }
@@ -51,6 +67,21 @@ export default function RegisterPage() {
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#007bff]" size={20} />
             <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-4 pl-12 bg-gray-50 rounded-2xl outline-none text-gray-900 font-bold" placeholder="Email" />
           </div>
+
+          {/* Role Selection - For Testing */}
+          <div className="relative">
+            <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-[#007bff]" size={20} />
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full p-4 pl-12 bg-gray-50 rounded-2xl outline-none text-gray-900 font-bold appearance-none cursor-pointer"
+            >
+              <option value="LEARNER">Học viên (Learner)</option>
+              <option value="ADMIN">Quản trị viên (Admin)</option>
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">▼</div>
+          </div>
+
           <div className="relative">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#007bff]" size={20} />
             <input type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-4 pl-12 bg-gray-50 rounded-2xl outline-none text-gray-900 font-bold" placeholder="Mật khẩu" />
