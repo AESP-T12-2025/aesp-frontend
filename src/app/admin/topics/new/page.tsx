@@ -6,12 +6,13 @@ import { topicService } from "@/services/topicService";
 import toast from "react-hot-toast";
 import { ArrowLeft, Save, Loader2, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
+import ImageUpload from "@/components/ImageUpload";
 
 export default function NewTopicPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        title: "",
+        name: "",
         description: "",
         image_url: "",
     });
@@ -23,14 +24,16 @@ export default function NewTopicPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.title.trim()) {
+        if (!formData.name.trim()) {
             toast.error("Vui lòng nhập tên chủ đề");
             return;
         }
 
         setLoading(true);
         try {
-            await topicService.create(formData);
+            // Temporary: Hardcode category_id until category selection is implemented
+            const payload = { ...formData, category_id: 1 };
+            await topicService.create(payload);
             toast.success("Tạo chủ đề thành công!");
             router.push("/admin/topics");
         } catch (error: any) {
@@ -52,16 +55,16 @@ export default function NewTopicPage() {
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                    {/* Title */}
+                    {/* Name */}
                     <div>
-                        <label htmlFor="title" className="block text-sm font-bold text-gray-700 mb-2">
+                        <label htmlFor="name" className="block text-sm font-bold text-gray-700 mb-2">
                             Tên chủ đề <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
-                            id="title"
-                            name="title"
-                            value={formData.title}
+                            id="name"
+                            name="name"
+                            value={formData.name}
                             onChange={handleChange}
                             placeholder="Ví dụ: Daily Conversation"
                             className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
@@ -85,34 +88,13 @@ export default function NewTopicPage() {
                         />
                     </div>
 
-                    {/* Image URL */}
+                    {/* Image Upload */}
                     <div>
-                        <label htmlFor="image_url" className="block text-sm font-bold text-gray-700 mb-2">
-                            URL Ảnh bìa (Tạm thời)
-                        </label>
-                        <div className="flex gap-4 items-start">
-                            <div className="flex-1">
-                                <input
-                                    type="url"
-                                    id="image_url"
-                                    name="image_url"
-                                    value={formData.image_url}
-                                    onChange={handleChange}
-                                    placeholder="https://example.com/image.jpg"
-                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                                />
-                                <p className="text-xs text-gray-500 mt-1">Dán đường dẫn ảnh trực tiếp vào đây.</p>
-                            </div>
-
-                            {/* Image Preview */}
-                            <div className="w-24 h-24 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                {formData.image_url ? (
-                                    <img src={formData.image_url} alt="Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
-                                ) : (
-                                    <ImageIcon className="text-gray-400" />
-                                )}
-                            </div>
-                        </div>
+                        <ImageUpload
+                            value={formData.image_url}
+                            onChange={(url) => setFormData(prev => ({ ...prev, image_url: url }))}
+                            label="Ảnh bìa chủ đề"
+                        />
                     </div>
 
                     {/* Actions */}

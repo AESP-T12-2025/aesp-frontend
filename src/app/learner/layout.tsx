@@ -12,6 +12,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
   const menuItems = [
     { name: 'Dashboard', href: '/learner', icon: '📊' },
     { name: 'Scenarios', href: '/learner/scenarios', icon: '📜' },
+    { name: 'Profile', href: '/profile', icon: '👤' },
     { name: 'History', href: '#', icon: '🕒' },
   ];
 
@@ -33,8 +34,8 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
                   key={item.name}
                   href={item.href}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${isActive
-                      ? 'bg-indigo-50 text-indigo-600 shadow-sm'
-                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-indigo-50 text-indigo-600 shadow-sm'
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                 >
                   <span className="text-xl">{item.icon}</span>
@@ -86,7 +87,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
                 <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
               </button>
 
-              <div className="flex items-center gap-3 pl-6 border-l border-gray-200">
+              <Link href="/profile" className="flex items-center gap-3 pl-6 border-l border-gray-200 hover:bg-gray-50 p-2 rounded-lg transition-colors">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-bold text-gray-900 leading-none">{user?.full_name}</p>
                   <p className="text-[10px] text-green-500 font-bold mt-1 uppercase">Online</p>
@@ -98,7 +99,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
                     user?.full_name?.charAt(0).toUpperCase() || "L"
                   )}
                 </div>
-              </div>
+              </Link>
             </div>
           </header>
 
