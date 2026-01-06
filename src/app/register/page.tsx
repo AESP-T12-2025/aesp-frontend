@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Mail, Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import api from '@/lib/api'; 
+import api from '@/lib/api';
+import toast from 'react-hot-toast';
 
 export default function RegisterPage() {
   const [fullName, setFullName] = useState('');
@@ -15,8 +16,8 @@ export default function RegisterPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== confirmPassword) return alert("Mật khẩu không khớp!");
-    
+    if (password !== confirmPassword) return toast.error("Mật khẩu không khớp!");
+
     setIsLoading(true);
     try {
       const response = await api.post('/auth/register', {
@@ -26,12 +27,12 @@ export default function RegisterPage() {
       });
 
       if (response.status === 201 || response.status === 200) {
-        alert("Đăng ký thành công!");
+        toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
         router.push('/login');
       }
     } catch (error: any) {
       const detail = error.response?.data?.detail;
-      alert("Lỗi đăng ký: " + (Array.isArray(detail) ? detail[0]?.msg : detail || "Email đã tồn tại"));
+      toast.error("Lỗi đăng ký: " + (Array.isArray(detail) ? detail[0]?.msg : detail || "Email đã tồn tại"));
     } finally {
       setIsLoading(false);
     }
@@ -53,6 +54,9 @@ export default function RegisterPage() {
           <div className="relative">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#007bff]" size={20} />
             <input type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-4 pl-12 bg-gray-50 rounded-2xl outline-none text-gray-900 font-bold" placeholder="Mật khẩu" />
+            <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" onClick={() => setShowPassword(!showPassword)}>
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
           <div className="relative">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#007bff]" size={20} />

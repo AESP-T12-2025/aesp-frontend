@@ -2,7 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Loader2, Mail, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import api from '@/lib/api'; 
+import api from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -10,11 +12,15 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { login, user } = useAuth();
 
+  // Redirect if already logged in
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) router.push('/profile');
-  }, [router]);
+    if (user) {
+      if (user.role === 'ADMIN') router.push('/admin');
+      else router.push('/learner');
+    }
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,12 +35,16 @@ export default function LoginPage() {
       });
 
       if (response.status === 200) {
-        localStorage.setItem('token', response.data.access_token);
-        router.push('/profile');
+        toast.success("Đăng nhập thành công!");
+        const token = response.data.access_token;
+
+        // Login via context (saves token & fetches profile)
+        await login(token);
+        // The useEffect above will handle redirection once 'user' state is updated
       }
     } catch (error: any) {
       const detail = error.response?.data?.detail;
-      alert("Lỗi: " + (typeof detail === 'string' ? detail : "Sai tài khoản hoặc mật khẩu"));
+      toast.error(typeof detail === 'string' ? detail : "Sai tài khoản hoặc mật khẩu");
     } finally {
       setIsLoading(false);
     }
@@ -53,7 +63,7 @@ export default function LoginPage() {
             <label className="text-sm font-bold text-gray-600">Email</label>
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#007bff]" size={20} />
-              <input 
+              <input
                 type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
                 className="w-full p-4 pl-12 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#007bff] text-gray-900 font-bold"
                 placeholder="email@example.com"
@@ -65,7 +75,7 @@ export default function LoginPage() {
             <label className="text-sm font-bold text-gray-600">Mật khẩu</label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#007bff]" size={20} />
-              <input 
+              <input
                 type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)}
                 className="w-full p-4 pl-12 bg-gray-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#007bff] text-gray-900 font-bold"
                 placeholder="••••••••"
