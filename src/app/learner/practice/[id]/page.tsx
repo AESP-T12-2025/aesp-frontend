@@ -1,143 +1,158 @@
-"use client"; 
+"use client";
 
-import { useEffect, useState, useRef } from 'react'; 
-import { useParams } from 'next/navigation'; 
-import { practiceService, Vocab } from '@/services/practiceService';
+import React, { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft, Mic, Volume2, Award, Zap } from 'lucide-react';
+import Link from 'next/link';
+import { scenarioService, Scenario } from '@/services/scenarioService';
+import toast from 'react-hot-toast';
 
-const PracticePage = () => {
-  const params = useParams(); 
-  const id = params.id as string; 
+export default function PracticeRoomPage() {
+  const params = useParams();
+  const router = useRouter();
+  const scenarioId = params.id as string;
 
-  const [vocabs, setVocabs] = useState<Vocab[]>([]); 
-  const [scriptDetail, setScriptDetail] = useState<any>(null); 
+  const [scenario, setScenario] = useState<Scenario | null>(null);
+  const [vocab, setVocab] = useState<{ phrase: string, translation: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
-  const [loading, setLoading] = useState(true);
-  
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const [, setCurrentSessionId] = useState<number | null>(null);
 
   useEffect(() => {
-    const loadData = async () => {
-      if (id) {
+    const fetchData = async () => {
+      if (!scenarioId) return;
+      try {
+        const scenarioData = await scenarioService.getById(scenarioId);
+        setScenario(scenarioData);
+
         try {
-          const [vocabData, detailData] = await Promise.all([
-            practiceService.getVocab(id),
-            practiceService.getScenarioDetail(id) 
-          ]);
-          setVocabs(vocabData);
-          setScriptDetail(detailData);
-        } catch (err) {
-          console.error("Lỗi khi lấy dữ liệu:", err);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-    loadData();
+          const vocabData = await scenarioService.getVocab(scenarioId);
+          const vocabObj = vocabData.vocabulary || {};
 
-    
-    return () => {
-      if (mediaRecorderRef.current) {
-        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [id]);
+          let vocabList: { phrase: string, translation: string }[] = [];
 
-  const handleStartRecording = async () => {
-    try {
-      const session = await practiceService.startSession(id!);
-      setCurrentSessionId(session.id);
-
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      
-      mediaRecorderRef.current = recorder;
-      audioChunksRef.current = [];
-
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
-      };
-
-      recorder.onstop = async () => {
-       
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' }); 
-        
-        if (session.id) {
-          try {
-            await practiceService.submitAudio(session.id, audioBlob);
-            alert("Đã gửi bài nói thành công! AI đang chấm điểm...");
-          } catch (error) {
-            alert("Lỗi khi gửi file âm thanh.");
+          if (Array.isArray(vocabObj)) {
+            vocabList = vocabObj.map((v: string) => ({ phrase: v, translation: '' }));
+          } else {
+            vocabList = Object.entries(vocabObj).map(([start, end]) => ({
+              phrase: start,
+              translation: String(end)
+            }));
           }
+
+          setVocab(vocabList);
+        } catch (e) {
+          console.warn("No vocab found");
         }
-      };
+      } catch (error) {
+        console.error("Failed to load scenario", error);
+        toast.error("Không thể tải bài tập");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, [scenarioId]);
 
-      recorder.start();
-      setIsRecording(true);
-    } catch (err) {
-      alert("Lỗi: " + err + ". (Kiểm tra Micro hoặc Đăng nhập)");
+  const toggleRecording = () => {
+    if (!isRecording) {
+      toast("Đang lắng nghe... (Demo Tuần 1)", { icon: '🎙️' });
+    } else {
+      toast.success("Đã ghi âm! (AI sẽ xử lý ở Tuần 2)");
     }
+    setIsRecording(!isRecording);
   };
 
-  const handleStopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-     
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      setIsRecording(false);
-    }
-  };
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin text-[#007bff] text-4xl">●</div></div>;
 
-  if (loading) return <div style={{ padding: '20px' }}>Đang tải dữ liệu luyện tập...</div>;
+  if (!scenario) return <div className="p-8 text-center text-red-500">Bài học không tồn tại</div>;
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 80px)', gap: '20px', padding: '20px' }}>
-     
-      <div style={{ flex: '0 0 400px', backgroundColor: '#fff', borderRadius: '15px', padding: '25px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflowY: 'auto' }}>
-        <h1 style={{ color: '#007bff', fontSize: '24px' }}>Luyện tập Speaking</h1>
-        <p style={{ color: '#666', marginBottom: '20px' }}>Dùng các từ vựng này để được điểm cao nhé.</p>
-        
-        <div style={{ backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '10px', marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '18px', borderBottom: '2px solid #007bff', paddingBottom: '5px' }}>Từ vựng quan trọng</h3>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {vocabs.map((v, i) => (
-              <li key={i} style={{ margin: '10px 0' }}>
-                <b style={{ color: '#d9534f' }}>{v.word}</b>: {v.meaning}
-              </li>
-            ))}
-          </ul>
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+      {/* Header */}
+      <header className="bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between">
+        <Link href={`/learner/topics/${scenario.topic_id}`} className="text-gray-400 hover:text-white flex items-center transition">
+          <ArrowLeft size={20} className="mr-2" /> Thoát
+        </Link>
+        <div className="text-center">
+          <h1 className="text-xl font-bold">{scenario.title}</h1>
+          <span className="text-xs text-[#007bff] font-bold uppercase tracking-widest">{scenario.difficulty_level}</span>
         </div>
-      </div>
+        <div className="w-20"></div> {/* Spacer */}
+      </header>
 
-      <div style={{ flex: 1, backgroundColor: '#fff', borderRadius: '15px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', padding: '40px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <h2 style={{ color: '#333' }}>{scriptDetail?.title}</h2>
-            <div style={{ fontSize: '22px', fontStyle: 'italic', color: '#444', backgroundColor: '#fff9c4', padding: '20px', borderRadius: '10px' }}>
-                "{scriptDetail?.script_content || "Đang tải nội dung kịch bản..."}"
-            </div>
-        </div>
-
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '60px', marginBottom: '20px' }}>
-            {isRecording ? "🔴" : "🎙️"}
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col md:flex-row">
+        {/* Left: Learning Materials */}
+        <div className="w-full md:w-1/3 bg-gray-800 p-6 border-r border-gray-700 overflow-y-auto">
+          <div className="mb-8">
+            <h3 className="text-gray-400 font-bold uppercase text-xs mb-4 tracking-wider">Hướng dẫn</h3>
+            <p className="text-gray-300 leading-relaxed">
+              {scenario.description || "Hãy luyện tập các mẫu câu bên dưới. Bấm nút Micro để bắt đầu nói."}
+            </p>
           </div>
-          <h3>{isRecording ? "Hệ thống đang nghe..." : "Nhấn vào micro để bắt đầu nói"}</h3>
-          
-          <button 
-            onClick={isRecording ? handleStopRecording : handleStartRecording} 
-            style={{ 
-                padding: '15px 40px', borderRadius: '50px', border: 'none', 
-                backgroundColor: isRecording ? '#d9534f' : '#007bff', color: 'white', 
-                fontWeight: 'bold', cursor: 'pointer', marginTop: '20px', fontSize: '18px'
-            }}
-          >
-            {isRecording ? "Dừng và Gửi bài" : "Bắt đầu luyện tập"}
-          </button>
+
+          <div>
+            <h3 className="text-gray-400 font-bold uppercase text-xs mb-4 tracking-wider flex items-center">
+              <Zap size={14} className="mr-2 text-yellow-400" /> Từ vựng gợi ý
+            </h3>
+            <div className="space-y-3">
+              {vocab.length > 0 ? vocab.map((item, idx) => (
+                <div key={idx} className="bg-gray-700/50 p-4 rounded-xl border border-gray-700 flex items-center justify-between group cursor-pointer hover:bg-gray-700 transition">
+                  <div className="flex flex-col">
+                    <span className="font-bold text-lg text-white">{item.phrase}</span>
+                    {item.translation && <span className="text-sm text-gray-400">{item.translation}</span>}
+                  </div>
+                  <button className="text-gray-500 hover:text-[#007bff] transition">
+                    <Volume2 size={20} />
+                  </button>
+                </div>
+              )) : (
+                <p className="text-gray-500 italic">Chưa có từ vựng cho bài này.</p>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+
+        {/* Right/Center: Interactive Area */}
+        <div className="flex-1 flex flex-col items-center justify-center p-8 relative overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#007bff]/20 rounded-full blur-[100px] pointer-events-none"></div>
+
+          {/* AI Avatar / Visualization */}
+          <div className="mb-12 relative">
+            <div className={`w-40 h-40 rounded-full border-4 flex items-center justify-center shadow-[0_0_50px_rgba(0,123,255,0.5)] transition-all duration-500 ${isRecording ? 'border-red-500 shadow-red-500/50 scale-110' : 'border-[#007bff] bg-gray-800'}`}>
+              {isRecording ? (
+                <div className="space-y-1 flex gap-1 h-8 items-end">
+                  <div className="w-2 bg-red-500 animate-[bounce_1s_infinite] h-4"></div>
+                  <div className="w-2 bg-red-500 animate-[bounce_1.2s_infinite] h-8"></div>
+                  <div className="w-2 bg-red-500 animate-[bounce_0.8s_infinite] h-6"></div>
+                </div>
+              ) : (
+                <Mic size={64} className="text-[#007bff]" />
+              )}
+            </div>
+          </div>
+
+          <h2 className="text-2xl font-bold text-white mb-8 text-center">
+            {isRecording ? "Đang lắng nghe bạn..." : "Bấm Micro để bắt đầu nói"}
+          </h2>
+
+          {/* Microphone Button */}
+          <button
+            onClick={toggleRecording}
+            className={`p-6 rounded-full transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-2xl ${isRecording
+              ? 'bg-red-500 hover:bg-red-600 shadow-red-500/30'
+              : 'bg-[#007bff] hover:bg-blue-600 shadow-blue-500/30'
+              }`}
+          >
+            <Mic size={40} className="text-white" />
+          </button>
+
+          <p className="mt-8 text-gray-400 text-sm">
+            AI sẽ chấm điểm phát âm và ngữ pháp của bạn.
+          </p>
+        </div>
+      </main>
     </div>
   );
-};
-
-export default PracticePage;
+}

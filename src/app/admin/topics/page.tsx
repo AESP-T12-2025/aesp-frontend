@@ -83,7 +83,7 @@ export default function TopicsPage() {
                             <div key={topic.topic_id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden border border-gray-100 group">
                                 <div className="h-48 bg-gray-100 relative overflow-hidden">
                                     {topic.image_url ? (
-                                        <img src={topic.image_url} alt={topic.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                        <img src={topic.image_url} alt={topic.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center bg-gray-50">
                                             <ImageIcon className="w-12 h-12 text-gray-300" />
@@ -94,13 +94,15 @@ export default function TopicsPage() {
                                     </div>
                                 </div>
                                 <div className="p-5">
-                                    <h3 className="text-lg font-bold text-gray-900 line-clamp-1" title={topic.title}>{topic.title}</h3>
+                                    <h3 className="text-lg font-bold text-gray-900 line-clamp-1" title={topic.name}>{topic.name}</h3>
                                     <p className="text-sm text-gray-500 mt-2 line-clamp-2 h-10">{topic.description || "Không có mô tả."}</p>
 
                                     <div className="mt-5 flex justify-end gap-2 border-t border-gray-50 pt-4">
-                                        <button className="flex items-center text-sm text-indigo-600 hover:text-indigo-800 font-medium px-3 py-1.5 rounded-md hover:bg-indigo-50 transition-colors">
-                                            <Edit className="w-3.5 h-3.5 mr-1.5" /> Sửa
-                                        </button>
+                                        <Link href={`/admin/topics/${topic.topic_id}/edit`}>
+                                            <button className="flex items-center text-sm text-indigo-600 hover:text-indigo-800 font-medium px-3 py-1.5 rounded-md hover:bg-indigo-50 transition-colors">
+                                                <Edit className="w-3.5 h-3.5 mr-1.5" /> Sửa
+                                            </button>
+                                        </Link>
                                         <button
                                             onClick={() => handleDelete(topic.topic_id)}
                                             className="flex items-center text-sm text-red-600 hover:text-red-800 font-medium px-3 py-1.5 rounded-md hover:bg-red-50 transition-colors"
