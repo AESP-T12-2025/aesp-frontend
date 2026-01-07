@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
-    allowedRoles?: ('ADMIN' | 'LEARNER')[];
+    allowedRoles?: ('ADMIN' | 'LEARNER' | 'MENTOR')[];
 }
 
 export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
@@ -21,6 +21,7 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
         if (!isLoading && user && allowedRoles && !allowedRoles.includes(user.role)) {
             // Redirect to authorized dashboard based on role
             if (user.role === 'ADMIN') router.push('/admin');
+            else if (user.role === 'MENTOR') router.push('/mentor/profile');
             else router.push('/learner');
         }
     }, [user, isLoading, router, allowedRoles]);

@@ -77,6 +77,7 @@ export default function RegisterPage() {
               className="w-full p-4 pl-12 bg-gray-50 rounded-2xl outline-none text-gray-900 font-bold appearance-none cursor-pointer"
             >
               <option value="LEARNER">Học viên (Learner)</option>
+              <option value="MENTOR">Giảng viên (Mentor)</option>
               <option value="ADMIN">Quản trị viên (Admin)</option>
             </select>
             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">▼</div>
