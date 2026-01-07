@@ -3,17 +3,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     LayoutDashboard,
-    Users,
+    Calendar,
     BookOpen,
-    MessageSquare,
     LogOut,
-    UserCheck
+    ClipboardList,
+    FolderOpen,
+    History
 } from "lucide-react";
 import clsx from "clsx";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
 
-export default function AdminLayout({
+export default function MentorLayout({
     children,
 }: {
     children: React.ReactNode;
@@ -22,23 +23,24 @@ export default function AdminLayout({
     const { logout, user } = useAuth();
 
     const navigation = [
-        { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-        { name: "Users", href: "/admin/users", icon: Users },
-        { name: "Mentors", href: "/admin/mentors", icon: UserCheck },
-        { name: "Topics", href: "/admin/topics", icon: BookOpen },
-        { name: "Scenarios", href: "/admin/scenarios", icon: MessageSquare },
+        { name: "Dashboard", href: "/mentor/profile", icon: LayoutDashboard },
+        { name: "My Bookings", href: "/mentor/bookings", icon: BookOpen },
+        { name: "Sessions", href: "/mentor/sessions", icon: ClipboardList },
+        { name: "Resources", href: "/mentor/resources", icon: FolderOpen },
+        { name: "History", href: "/mentor/history", icon: History },
+        { name: "Availability", href: "/mentor/availability", icon: Calendar },
     ];
 
     return (
-        <ProtectedRoute allowedRoles={['ADMIN']}>
+        <ProtectedRoute allowedRoles={['MENTOR']}>
             <div className="flex h-screen bg-gray-50">
                 {/* Sidebar */}
                 <aside className="w-64 bg-white shadow-sm border-r border-gray-100 flex flex-col">
                     <div className="p-6 border-b border-gray-100">
-                        <h1 className="text-2xl font-black text-[#007bff]">AESP Admin</h1>
+                        <h1 className="text-2xl font-black text-[#007bff]">AESP Mentor</h1>
                         <p className="text-sm text-gray-500 mt-1 font-medium">{user?.full_name}</p>
                     </div>
-                    <nav className="mt-4 px-3 space-y-1 flex-1">
+                    <nav className="mt-4 px-3 space-y-1 flex-1 overflow-y-auto">
                         {navigation.map((item) => {
                             const isActive = pathname === item.href;
                             return (

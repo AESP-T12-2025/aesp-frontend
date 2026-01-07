@@ -8,7 +8,7 @@ export interface User {
     user_id: number;
     email: string;
     full_name: string;
-    role: "ADMIN" | "LEARNER";
+    role: "ADMIN" | "LEARNER" | "MENTOR";
     avatar_url?: string;
     is_active: boolean;
 }

@@ -7,12 +7,17 @@ const nextConfig: NextConfig = {
     domains: ['aesp-backend.onrender.com'], // Allow images from backend
   },
   async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'https://aesp-backend.onrender.com/:path*', // Proxy to Backend
-      },
-    ];
+    // Only proxy in development mode
+    // In production (Vercel), use NEXT_PUBLIC_API_URL env variable
+    if (process.env.NODE_ENV === 'development') {
+      return [
+        {
+          source: '/api/:path*',
+          destination: 'http://127.0.0.1:8000/:path*', // Proxy to Local Backend
+        },
+      ];
+    }
+    return [];
   },
 };
 

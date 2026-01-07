@@ -10,7 +10,7 @@ export default function Header() {
     const pathname = usePathname();
 
     // Hide global header on Dashboard pages (they have their own layouts)
-    if (pathname?.startsWith('/admin') || pathname?.startsWith('/learner')) {
+    if (pathname?.startsWith('/admin') || pathname?.startsWith('/learner') || pathname?.startsWith('/mentor')) {
         return null;
     }
 
@@ -30,14 +30,19 @@ export default function Header() {
                     <>
                         {/* Role-based Dashboard Link */}
                         {user.role === 'ADMIN' ? (
-                            <Link href="/admin" className="flex items-center text-gray-600 hover:text-[#007bff] px-3 py-2 rounded-lg hover:bg-gray-50 transition-all font-medium">
+                            <Link href="/admin/mentors" className="flex items-center text-gray-600 hover:text-[#007bff] px-3 py-2 rounded-lg hover:bg-gray-50 transition-all font-medium">
                                 <Shield size={18} className="mr-2" />
                                 Admin Dashboard
                             </Link>
+                        ) : user.role === 'MENTOR' ? (
+                            <Link href="/mentor/profile" className="flex items-center text-gray-600 hover:text-[#007bff] px-3 py-2 rounded-lg hover:bg-gray-50 transition-all font-medium">
+                                <UserIcon size={18} className="mr-2" />
+                                Mentor Dashboard
+                            </Link>
                         ) : (
-                            <Link href="/learner" className="flex items-center text-gray-600 hover:text-[#007bff] px-3 py-2 rounded-lg hover:bg-gray-50 transition-all font-medium">
+                            <Link href="/learner/mentors" className="flex items-center text-gray-600 hover:text-[#007bff] px-3 py-2 rounded-lg hover:bg-gray-50 transition-all font-medium">
                                 <BookOpen size={18} className="mr-2" />
-                                Learning Space
+                                Tìm Mentor
                             </Link>
                         )}
 
