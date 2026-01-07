@@ -11,9 +11,14 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
 
   const menuItems = [
     { name: 'Dashboard', href: '/learner', icon: '📊' },
-    { name: 'Scenarios', href: '/learner/scenarios', icon: '📜' },
-    { name: 'Profile', href: '/profile', icon: '👤' },
-    { name: 'History', href: '#', icon: '🕒' },
+    { name: 'Lộ trình', href: '/learner/path', icon: '🗺️' },
+    { name: 'Thư viện', href: '/learner/topics', icon: '📚' },
+    { name: 'Cộng đồng', href: '/learner/community', icon: '🌍' },
+    { name: 'Tìm Mentor', href: '/learner/mentors', icon: '👨‍🏫' },
+    { name: 'Thành tựu', href: '/learner/achievements', icon: '🏆' },
+    { name: 'Báo cáo', href: '/learner/reports', icon: '📈' },
+    { name: 'Nâng cấp', href: '/learner/packages', icon: '💎' },
+    { name: 'Hồ sơ', href: '/profile', icon: '👤' },
   ];
 
   return (
@@ -82,10 +87,10 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
             </div>
 
             <div className="flex items-center gap-6">
-              <button className="relative text-gray-400 hover:text-indigo-600 transition-colors">
+              <Link href="/learner/notifications" className="relative text-gray-400 hover:text-indigo-600 transition-colors">
                 <span className="text-xl">🔔</span>
                 <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-              </button>
+              </Link>
 
               <Link href="/profile" className="flex items-center gap-3 pl-6 border-l border-gray-200 hover:bg-gray-50 p-2 rounded-lg transition-colors">
                 <div className="text-right hidden sm:block">

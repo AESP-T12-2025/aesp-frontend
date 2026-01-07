@@ -1,118 +1,148 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import api from '@/lib/api';
+import React from 'react';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
-import { User, LogOut, Loader2, BookOpen, LayoutDashboard, Trophy } from 'lucide-react';
+import { Camera, Mail, Phone, MapPin, Edit, Settings, LogOut, Award, Calendar, BookOpen } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user, logout, isLoading } = useAuth();
-  const router = useRouter();
-
-  // Redirect if not logged in (Double check, though ProtectedRoute should handle this if wrapped)
-  // Since ProfilePage is public-ish, we handle it here or rely on AuthContext
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, isLoading, router]);
-
-  if (isLoading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="animate-spin text-[#007bff]" size={48} /></div>;
+  const { user, logout } = useAuth();
 
   return (
-    <div className="flex min-h-screen bg-[#f8faff]">
-      <div className="w-64 bg-white border-r p-6 hidden md:flex flex-col">
-        <div className="text-2xl font-black text-[#007bff] mb-10">AESP.</div>
-        <nav className="space-y-2 flex-1">
-          <div className="flex items-center space-x-3 p-3 bg-blue-50 text-[#007bff] rounded-xl font-bold cursor-pointer"><LayoutDashboard size={20} /> <span>Tổng quan</span></div>
-          <div onClick={() => router.push('/topics')} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-xl font-bold cursor-pointer"><BookOpen size={20} /> <span>Chủ đề học</span></div>
-        </nav>
-        <button onClick={logout} className="flex items-center space-x-3 p-3 text-red-400 font-bold mt-auto"><LogOut size={20} /> <span>Đăng xuất</span></button>
-      </div>
+    <ProtectedRoute allowedRoles={['LEARNER', 'MENTOR', 'ADMIN']}>
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-5xl mx-auto">
+          <h1 className="text-3xl font-black text-gray-900 mb-8">Hồ sơ cá nhân</h1>
 
-      <main className="flex-1 p-10">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-[40px] shadow-sm border overflow-hidden">
-            <div className="h-32 bg-[#007bff]"></div>
-            <div className="px-10 pb-10 relative">
-              <div className="relative -top-12 flex items-end space-x-6">
-                <div className="w-24 h-24 bg-blue-100 rounded-3xl flex items-center justify-center border-4 border-white"><User size={40} className="text-[#007bff]" /></div>
-                <div className="pb-2">
-                  <h2 className="text-3xl font-black">{user?.full_name}</h2>
-                  <p className="text-gray-400 font-bold">{user?.email}</p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* LEFT: User Card */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-[32px] p-8 shadow-lg border border-gray-100 text-center relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-[#007bff] to-blue-400"></div>
+
+                <div className="relative z-10 mx-auto w-28 h-28 bg-white p-1 rounded-full -mt-4 mb-4 shadow-md">
+                  <div className="w-full h-full bg-gray-200 rounded-full overflow-hidden relative group">
+                    {user?.avatar_url ? (
+                      <img src={user.avatar_url} alt="Avt" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-blue-100 text-blue-600 font-bold text-3xl">
+                        {user?.full_name?.charAt(0) || 'U'}
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                      <Camera className="text-white" size={24} />
+                    </div>
+                  </div>
+                </div>
+
+                <h2 className="text-xl font-black text-gray-900 mb-1">{user?.full_name}</h2>
+                <p className="text-sm text-gray-500 font-bold mb-6">{user?.role}</p>
+
+                <div className="space-y-4 text-left">
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                    <Mail size={18} className="text-gray-400" />
+                    <div>
+                      <p className="text-xs text-gray-400 font-bold uppercase">Email</p>
+                      <p className="text-sm font-medium text-gray-900 break-all">{user?.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                    <Award size={18} className="text-gray-400" />
+                    <div>
+                      <p className="text-xs text-gray-400 font-bold uppercase">Level</p>
+                      <p className="text-sm font-medium text-gray-900">Intermediate B1</p>
+                    </div>
+                  </div>
+                </div>
+
+                <button onClick={logout} className="w-full mt-8 py-3 border-2 border-red-100 text-red-500 font-bold rounded-xl hover:bg-red-50 transition-all flex items-center justify-center gap-2">
+                  <LogOut size={18} /> Đăng xuất
+                </button>
+              </div>
+            </div>
+
+            {/* RIGHT: Details & Settings */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm">
+                  <div className="w-10 h-10 bg-blue-50 text-[#007bff] rounded-xl flex items-center justify-center mb-3">
+                    <BookOpen size={20} />
+                  </div>
+                  <p className="text-2xl font-black text-gray-900">12</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase">Bài học</p>
+                </div>
+                <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm">
+                  <div className="w-10 h-10 bg-green-50 text-green-600 rounded-xl flex items-center justify-center mb-3">
+                    <Calendar size={20} />
+                  </div>
+                  <p className="text-2xl font-black text-gray-900">42h</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase">Luyện tập</p>
+                </div>
+                <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm">
+                  <div className="w-10 h-10 bg-yellow-50 text-yellow-600 rounded-xl flex items-center justify-center mb-3">
+                    <Award size={20} />
+                  </div>
+                  <p className="text-2xl font-black text-gray-900">850</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase">Điểm XP</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="p-6 bg-gray-50 rounded-3xl border">
-                  <p className="text-xs font-black text-gray-400 uppercase mb-1">Chức vụ</p>
-                  <p className="font-bold text-gray-900">{user?.role || "Học viên"}</p>
+
+              {/* Edit Form */}
+              <div className="bg-white rounded-[32px] p-8 shadow-sm border border-gray-100">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-black text-gray-900">Thông tin cá nhân</h3>
+                  <button className="text-[#007bff] font-bold text-sm hover:underline">Chỉnh sửa</button>
                 </div>
-                <div className="p-6 bg-gray-50 rounded-3xl border">
-                  <p className="text-xs font-black text-gray-400 uppercase mb-1">Điểm tích lũy</p>
-                  <p className="font-bold text-orange-500">1,250 XP</p>
+
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Họ và tên</label>
+                      <input
+                        type="text"
+                        defaultValue={user?.full_name || ''}
+                        className="w-full px-4 py-3 bg-gray-50 rounded-xl font-medium text-gray-900 outline-none focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Số điện thoại</label>
+                      <input
+                        type="text"
+                        defaultValue="0987654321"
+                        className="w-full px-4 py-3 bg-gray-50 rounded-xl font-medium text-gray-900 outline-none focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Địa chỉ</label>
+                    <input
+                      type="text"
+                      defaultValue="Ho Chi Minh City, Vietnam"
+                      className="w-full px-4 py-3 bg-gray-50 rounded-xl font-medium text-gray-900 outline-none focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Mục tiêu học tập</label>
+                    <textarea
+                      rows={3}
+                      defaultValue="Tôi muốn cải thiện kỹ năng giao tiếp để phục vụ công việc và du lịch."
+                      className="w-full px-4 py-3 bg-gray-50 rounded-xl font-medium text-gray-900 outline-none focus:ring-2 focus:ring-blue-100 resize-none"
+                    />
+                  </div>
+
+                  <div className="pt-4 flex justify-end">
+                    <button className="px-8 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-all">
+                      Lưu thay đổi
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Transaction History Section */}
-          <TransactionHistory />
         </div>
-      </main>
-    </div>
-  );
-}
-
-// Sub-component for Transaction History
-function TransactionHistory() {
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    api.get('/transactions')
-      .then(res => setTransactions(res.data))
-      .catch(err => console.error("Failed to fetch transactions", err))
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) return <div className="p-8 text-center"><Loader2 className="animate-spin inline text-[#007bff]" /></div>;
-
-  return (
-    <div className="bg-white rounded-[40px] shadow-sm border p-8 mt-8">
-      <h3 className="text-xl font-black text-gray-800 mb-6 flex items-center gap-2">
-        <Trophy className="text-yellow-500" />
-        Lịch sử giao dịch (Mock)
-      </h3>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="text-xs text-gray-400 uppercase border-b">
-              <th className="py-3 font-black">Mã GD</th>
-              <th className="py-3 font-black">Gói cước</th>
-              <th className="py-3 font-black">Số tiền</th>
-              <th className="py-3 font-black">Trạng thái</th>
-              <th className="py-3 font-black">Ngày</th>
-            </tr>
-          </thead>
-          <tbody className="text-sm font-medium text-gray-600">
-            {transactions.map((tx) => (
-              <tr key={tx.transaction_id} className="border-b last:border-0 hover:bg-gray-50">
-                <td className="py-4">{tx.transaction_id}</td>
-                <td className="py-4 text-[#007bff]">{tx.package}</td>
-                <td className="py-4">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tx.amount)}</td>
-                <td className="py-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${tx.status === 'SUCCESS' ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'
-                    }`}>
-                    {tx.status}
-                  </span>
-                </td>
-                <td className="py-4 text-gray-400">{new Date(tx.date).toLocaleDateString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {transactions.length === 0 && <p className="text-center py-4 text-gray-400">Chưa có giao dịch nào.</p>}
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }
