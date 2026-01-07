@@ -1,66 +1,110 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
+import { ArrowRight, Trophy, Map, Crown, Zap, Target } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LearnerDashboard() {
+  const { user } = useAuth();
+
   const stats = [
-    { label: 'Bài đã học', value: '12', icon: '📖', color: 'bg-blue-100 text-blue-600' },
-    { label: 'Giờ luyện tập', value: '5.5h', icon: '⏱️', color: 'bg-green-100 text-green-600' },
-    { label: 'Điểm trung bình', value: '8.5', icon: '⭐', color: 'bg-yellow-100 text-yellow-600' },
+    { label: 'Ngày luyện tập', value: '12', icon: <Zap size={24} />, color: 'bg-orange-100 text-orange-600' },
+    { label: 'Điểm XP', value: '1,250', icon: <Target size={24} />, color: 'bg-blue-100 text-blue-600' },
+    { label: 'Hạng hiện tại', value: 'Silver', icon: <Trophy size={24} />, color: 'bg-yellow-100 text-yellow-600' },
   ];
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <header className="mb-10">
-        <h1 className="text-3xl font-bold text-gray-800">Chào mừng bạn quay lại! 👋</h1>
-        <p className="text-gray-500 mt-2">Hôm nay bạn muốn rèn luyện kỹ năng nói tiếng Anh về chủ đề gì?</p>
+    <div className="max-w-6xl mx-auto space-y-10">
+
+      {/* 1. WELCOME SECTION */}
+      <header className="flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-black text-gray-900 mb-2">Chào {user?.full_name?.split(' ').pop()}! 👋</h1>
+          <p className="text-gray-500 font-medium">Bạn đã sẵn sàng chinh phục mục tiêu hôm nay chưa?</p>
+        </div>
+        <Link href="/learner/achievements" className="hidden md:flex items-center gap-2 text-indigo-600 font-bold hover:underline">
+          Xem bảng xếp hạng <ArrowRight size={18} />
+        </Link>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      {/* 2. STATS OVERVIEW */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {stats.map((stat, index) => (
-          <div key={index} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${stat.color}`}>
+          <div key={index} className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${stat.color}`}>
               {stat.icon}
             </div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">{stat.label}</p>
-              <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
+              <p className="text-sm text-gray-500 font-bold uppercase tracking-wide">{stat.label}</p>
+              <h3 className="text-2xl font-black text-gray-900">{stat.value}</h3>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Banner chính - Kêu gọi hành động */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-10 text-white shadow-lg">
-        <div className="relative z-10 md:w-2/3">
-          <h2 className="text-3xl font-bold mb-4">Sẵn sàng để bứt phá kỹ năng nói?</h2>
-          <p className="text-blue-100 mb-8 leading-relaxed">
-            Hệ thống AI của chúng tôi sẽ giúp bạn luyện tập phản xạ và sửa lỗi phát âm ngay lập tức qua các kịch bản thực tế.
-          </p>
-          <Link 
-            href="/learner/scenarios" 
-            className="inline-block px-8 py-4 bg-white text-blue-600 rounded-xl font-bold text-lg hover:bg-blue-50 transition-all shadow-md active:scale-95"
-          >
-            Bắt đầu luyện tập ngay →
-          </Link>
-        </div>
-        
-        {/* Trang trí hình nền phụ (optional) */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 -mr-20 -mt-20 rounded-full"></div>
-        <div className="absolute bottom-0 right-0 w-40 h-40 bg-white opacity-10 mr-10 mb-10 rounded-full"></div>
+      {/* 3. MAIN ACTION CARDS (The "New Stuff") */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        {/* Card 1: Continue Learning */}
+        <Link href="/learner/path" className="group bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all relative overflow-hidden col-span-1 lg:col-span-2">
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500">
+            <Map size={160} className="text-indigo-600" />
+          </div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mb-6">
+              <Map size={24} />
+            </div>
+            <h3 className="text-2xl font-black text-gray-900 mb-2">Lộ trình học tập</h3>
+            <p className="text-gray-500 font-medium mb-8 max-w-sm">Tiếp tục bài học B1 Intermediate: "Daily Conversation" tại Node 4.</p>
+            <span className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold group-hover:bg-indigo-700 transition-colors">
+              Tiếp tục học <ArrowRight size={20} />
+            </span>
+          </div>
+        </Link>
+
+        {/* Card 2: Assessment */}
+        <Link href="/learner/assessment" className="group bg-gradient-to-br from-purple-500 to-indigo-600 rounded-[32px] p-8 text-white shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all">
+          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6">
+            <Target size={24} />
+          </div>
+          <h3 className="text-2xl font-black mb-2">Kiểm tra trình độ</h3>
+          <p className="text-indigo-100 font-medium mb-8">Làm bài test ngắn để AI tối ưu lộ trình học cho bạn.</p>
+          <span className="inline-flex items-center gap-2 text-white font-bold group-hover:gap-4 transition-all">
+            Làm bài ngay <ArrowRight size={20} />
+          </span>
+        </Link>
+
+        {/* Card 3: Upgrade */}
+        <Link href="/learner/packages" className="group bg-gray-900 rounded-[32px] p-8 text-white shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all">
+          <div className="w-12 h-12 bg-gray-800 rounded-2xl flex items-center justify-center mb-6 text-yellow-400">
+            <Crown size={24} fill="currentColor" />
+          </div>
+          <h3 className="text-2xl font-black mb-2 text-yellow-400">Nâng cấp Pro</h3>
+          <p className="text-gray-400 font-medium mb-8">Mở khóa Mentor 1-1 và tính năng AI không giới hạn.</p>
+          <span className="inline-flex items-center gap-2 text-white font-bold group-hover:gap-4 transition-all">
+            Xem các gói <ArrowRight size={20} />
+          </span>
+        </Link>
+
+        {/* Card 4: Scenarios (Existing) */}
+        <Link href="/learner/scenarios" className="group bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all lg:col-span-2">
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            <div className="flex-1">
+              <div className="w-12 h-12 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mb-6">
+                <Zap size={24} />
+              </div>
+              <h3 className="text-2xl font-black text-gray-900 mb-2">Luyện tập tự do</h3>
+              <p className="text-gray-500 font-medium mb-6">Chọn chủ đề bất kỳ và bắt đầu hội thoại với AI ngay lập tức.</p>
+              <span className="text-green-600 font-bold group-hover:underline">Khám phá thư viện chủ đề &rarr;</span>
+            </div>
+            <div className="w-full md:w-48 h-32 bg-green-50 rounded-2xl flex items-center justify-center text-green-200">
+              {/* Placeholder image/illustration */}
+              <Zap size={64} />
+            </div>
+          </div>
+        </Link>
       </div>
 
-      {/* Phần gợi ý thêm */}
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="p-6 border border-dashed border-gray-300 rounded-2xl">
-          <h3 className="font-bold text-gray-700 mb-2">Gợi ý bài học</h3>
-          <p className="text-sm text-gray-500 italic">"Phỏng vấn xin việc" là chủ đề đang được nhiều người luyện tập nhất tuần này.</p>
-        </div>
-        <div className="p-6 border border-dashed border-gray-300 rounded-2xl">
-          <h3 className="font-bold text-gray-700 mb-2">Mẹo nhỏ</h3>
-          <p className="text-sm text-gray-500 italic">Hãy đeo tai nghe để AI có thể nhận diện giọng nói của bạn một cách chính xác nhất.</p>
-        </div>
-      </div>
     </div>
   );
 }
