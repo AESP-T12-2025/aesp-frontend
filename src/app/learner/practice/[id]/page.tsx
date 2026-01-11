@@ -1,7 +1,7 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Mic, Volume2, Award, Zap, MoreVertical, Settings, Sparkles, StopCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Mic, Volume2, Award, Zap, MoreVertical, Settings, Sparkles, StopCircle, RefreshCw, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { scenarioService, Scenario } from '@/services/scenarioService';
 import toast from 'react-hot-toast';
@@ -15,6 +15,48 @@ export default function PracticeRoomPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const [showVocab, setShowVocab] = useState(true);
+  const [session, setSession] = useState<any>(null);
+  const [feedback, setFeedback] = useState<any>(null);
+  const [transcript, setTranscript] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const recognitionRef = useRef<any>(null);
+  const transcriptRef = useRef("");
+
+  const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
+
+  const analyzeTranscript = async (text: string, duration: number = 0) => {
+    if (!text) {
+      toast("Bạn chưa nói gì cả!");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      const { practiceService } = await import('@/services/practiceService');
+      // Pass duration to backend
+      const res = await practiceService.analyzeSpeech(text, session?.session_id, duration);
+      setFeedback(res);
+      toast.dismiss();
+      toast.success(`Hoàn thành! +${Math.ceil(duration / 2)} XP`);
+    } catch (err) {
+      console.error(err);
+      toast.dismiss();
+      toast.error("Lỗi kết nối AI");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  useEffect(() => {
+    // Start session on load
+    if (scenarioId) {
+      import('@/services/practiceService').then(({ practiceService }) => {
+        practiceService.startSession(scenarioId).then(res => setSession(res)).catch(console.error);
+      });
+    }
+  }, [scenarioId]);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -49,12 +91,76 @@ export default function PracticeRoomPage() {
   }, [scenarioId]);
 
   const toggleRecording = () => {
-    if (!isRecording) {
-      toast("Đang lắng nghe...", { icon: '🎙️' });
+    if (isRecording) {
+      stopListening();
     } else {
-      toast.success("Đã ghi âm!");
+      startListening();
     }
-    setIsRecording(!isRecording);
+  };
+
+  const startListening = () => {
+    if (!('webkitSpeechRecognition' in window)) {
+      toast.error("Trình duyệt không hỗ trợ Web Speech API");
+      return;
+    }
+
+    // Clear old state before starting
+    setFeedback(null);
+    setTranscript("");
+    transcriptRef.current = "";
+
+    const SpeechRecognition = (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.continuous = true; // CHANGED TO TRUE FOR LONGER SPEECH
+    recognition.interimResults = true;
+
+    recognitionRef.current = recognition;
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+      setRecordingStartTime(Date.now());
+      toast("Đang lắng nghe...", { icon: '🎙️' });
+    };
+
+    recognition.onresult = (event: any) => {
+      let fullText = "";
+      for (let i = 0; i < event.results.length; i++) {
+        fullText += event.results[i][0].transcript;
+      }
+      transcriptRef.current = fullText;
+      setTranscript(fullText);
+    };
+
+    recognition.onend = () => {
+      // If "continuous" is true, it might not stop automatically unless we call stop()
+      // So we don't auto-analyze here for continuous mode usually, 
+      // BUT if user clicked button to stop, stopListening calls analyzeTranscript manually.
+      // If it stopped by itself (silence), we can update status.
+      setIsRecording(false);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
+      if (event.error !== 'no-speech') {
+        toast.error(`Lỗi Mic: ${event.error}`);
+      }
+      setIsRecording(false);
+    };
+
+    recognition.start();
+  };
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+      // Manual stop triggers analysis immediately
+      if (transcriptRef.current) {
+        const duration = recordingStartTime ? (Date.now() - recordingStartTime) / 1000 : 0;
+        analyzeTranscript(transcriptRef.current, duration);
+      }
+    }
   };
 
   if (isLoading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><Loader2 className="animate-spin text-[#007bff]" size={40} /></div>;
@@ -133,13 +239,113 @@ export default function PracticeRoomPage() {
               {scenario.description || "Hãy bắt đầu bằng cách giới thiệu bản thân."}
             </h2>
 
-            <div className="flex justify-center gap-4">
-              <button className="px-6 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all flex items-center gap-2">
-                <Sparkles size={16} className="text-yellow-400" /> Gợi ý câu trả lời
-              </button>
-              <button className="px-6 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all flex items-center gap-2">
-                <RefreshCw size={16} /> Thử câu khác
-              </button>
+            {transcript && (
+              <div className="mb-4 bg-white/50 p-4 rounded-xl backdrop-blur-sm border border-white/60">
+                <p className="text-lg text-gray-700 italic">"{transcript}"</p>
+              </div>
+            )}
+
+            {isAnalyzing && (
+              <div className="flex flex-col items-center justify-center p-6 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-blue-100 animate-pulse">
+                <Loader2 size={32} className="animate-spin text-blue-500 mb-2" />
+                <p className="text-blue-600 font-bold">Đang chấm điểm...</p>
+              </div>
+            )}
+
+            {feedback && !isAnalyzing && (
+              <div className="mb-6 bg-white p-6 rounded-2xl shadow-lg border-l-4 border-blue-500 text-left">
+                <div className="grid grid-cols-3 gap-4 mb-4 text-center">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase font-bold">Grammar</p>
+                    <p className="text-2xl font-black text-blue-600">{feedback.grammar_score}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase font-bold">Pronunciation</p>
+                    <p className="text-2xl font-black text-green-600">{feedback.pronunciation_score}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase font-bold">Fluency</p>
+                    <p className="text-2xl font-black text-purple-600">{feedback.fluency_score || 0}</p>
+                  </div>
+                </div>
+                {feedback.better_version && (
+                  <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-800 mb-4">
+                    <strong>Suggestion:</strong> {feedback.better_version}
+                  </div>
+                )}
+
+                {/* NEW: Phonetic Analysis */}
+                {feedback.phonetic_analysis && (
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <h4 className="font-bold text-gray-700 text-sm mb-2 flex items-center gap-2">
+                      <Volume2 size={16} /> Phân tích phát âm
+                    </h4>
+                    {feedback.phonetic_analysis.transcription && (
+                      <div className="mb-3">
+                        <span className="text-xs font-bold text-gray-400 uppercase">IPA Transcription:</span>
+                        <p className="font-mono text-lg text-gray-800 tracking-wide bg-white px-2 py-1 rounded border border-gray-200 inline-block ml-2">
+                          {feedback.phonetic_analysis.transcription}
+                        </p>
+                      </div>
+                    )}
+
+                    {feedback.phonetic_analysis.mispronounced_words?.length > 0 ? (
+                      <div>
+                        <span className="text-xs font-bold text-gray-400 uppercase block mb-1">Cần cải thiện:</span>
+                        <div className="space-y-2">
+                          {feedback.phonetic_analysis.mispronounced_words.map((item: any, idx: number) => (
+                            <div key={idx} className="flex justify-between items-center bg-white p-2 rounded-lg border border-red-100">
+                              <div>
+                                <span className="font-bold text-red-600 mr-2">{item.word}</span>
+                                <span className="font-mono text-xs text-gray-500 bg-gray-100 px-1 py-0.5 rounded">{item.correct_ipa}</span>
+                              </div>
+                              <span className="text-xs font-medium text-gray-500">{item.issue}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-green-600 font-bold flex items-center gap-1">
+                        <CheckCircle size={14} /> Phát âm rất tốt! Không có lỗi đáng kể.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex justify-center gap-4 flex-wrap">
+              {!feedback ? (
+                <>
+                  <button
+                    onClick={() => toast("Hãy thử nói: 'Hello, I would like to introduce myself...'", { icon: '💡' })}
+                    className="px-6 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all flex items-center gap-2"
+                  >
+                    <Sparkles size={16} className="text-yellow-400" /> Gợi ý câu trả lời
+                  </button>
+                  <button
+                    onClick={() => { setTranscript(""); setFeedback(null); }}
+                    className="px-6 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all flex items-center gap-2"
+                  >
+                    <RefreshCw size={16} /> Làm mới
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => { setTranscript(""); setFeedback(null); }}
+                    className="px-6 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all flex items-center gap-2"
+                  >
+                    <RefreshCw size={16} /> Luyện tập lại
+                  </button>
+                  <Link
+                    href={`/learner/topics/${scenario.topic_id}`}
+                    className="px-8 py-3 bg-[#007bff] text-white shadow-lg shadow-blue-200 rounded-xl font-bold text-sm hover:bg-blue-600 transition-all flex items-center gap-2"
+                  >
+                    <CheckCircle size={18} /> Hoàn thành bài học
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

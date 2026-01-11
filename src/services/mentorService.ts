@@ -1,27 +1,17 @@
 import api from '@/lib/api';
 
-export interface MentorProfile {
-    user_id?: number;
-    mentor_id?: number;
-    full_name: string;
-    bio?: string;
-    skills?: string;
-    verification_status?: string;
-}
-
-export interface AvailabilitySlot {
-    slot_id?: number;
-    mentor_id?: number;
-    start_time: string;
-    end_time: string;
-    status: 'AVAILABLE' | 'BOOKED' | 'COMPLETED' | 'CANCELLED';
+export interface Resource {
+    resource_id?: number;
+    title: string;
+    description?: string;
+    file_url: string;
+    resource_type: 'DOCUMENT' | 'VIDEO' | 'AUDIO' | 'LINK';
 }
 
 export interface Session {
     session_id?: number;
     booking_id: number;
     learner_id: number;
-    mentor_id: number;
     start_time: string;
     end_time?: string;
     status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
@@ -31,118 +21,138 @@ export interface Session {
 export interface Assessment {
     assessment_id?: number;
     session_id: number;
-    pronunciation_score?: number;
-    grammar_score?: number;
-    fluency_score?: number;
-    vocabulary_score?: number;
+    pronunciation_score: number;
+    grammar_score: number;
+    fluency_score: number;
+    vocabulary_score: number;
     overall_score?: number;
     feedback: string;
     strengths?: string;
     areas_for_improvement?: string;
-    created_at?: string;
 }
 
-export interface Resource {
-    resource_id?: number;
+export interface MentorProfile {
     mentor_id?: number;
-    title: string;
-    description?: string;
-    file_url?: string;
-    resource_type: 'DOCUMENT' | 'VIDEO' | 'AUDIO' | 'LINK';
-    created_at?: string;
+    full_name: string;
+    bio: string;
+    skills: string;
+    verification_status?: 'PENDING' | 'VERIFIED' | 'REJECTED';
+}
+
+export interface AvailabilitySlot {
+    slot_id: number;
+    mentor_id: number;
+    start_time: string;
+    end_time: string;
+    is_booked: boolean;
 }
 
 export const mentorService = {
-    // 1. Profile Management
-    createOrUpdateProfile: async (data: { full_name: string; bio?: string; skills?: string }) => {
-        const response = await api.post<MentorProfile>('/mentors/profile', data);
-        return response.data;
+    // Profile
+    createOrUpdateProfile: async (data: MentorProfile) => {
+        const res = await api.post('/mentors/profile', data);
+        return res.data;
     },
 
+    // Mentors
     getAllMentors: async () => {
-        const response = await api.get<MentorProfile[]>('/mentors');
-        return response.data;
+        const res = await api.get('/mentors');
+        return res.data;
     },
-
-    // 2. Slot Management
-    createSlot: async (data: { start_time: string; end_time: string }) => {
-        const response = await api.post('/mentors/slots', data);
-        return response.data;
-    },
-
     getSlotsByMentor: async (mentorId: number) => {
-        const response = await api.get<AvailabilitySlot[]>(`/mentors/${mentorId}/slots`);
-        return response.data;
+        const res = await api.get(`/mentors/${mentorId}/slots`);
+        return res.data;
+    },
+    createSlot: async (data: { start_time: string, end_time: string }) => {
+        const res = await api.post('/mentors/slots', data);
+        return res.data;
     },
 
+    // Bookings
+    createBooking: async (slotId: number) => {
+        const res = await api.post('/bookings/create', { slot_id: slotId });
+        return res.data;
+    },
     getMyBookings: async () => {
-        const response = await api.get('/mentors/my-bookings');
-        return response.data;
+        const res = await api.get('/mentors/me/bookings');
+        return res.data;
     },
 
-    // 3. Session Management
-    getMySessions: async () => {
-        const response = await api.get<Session[]>('/mentors/sessions');
-        return response.data;
+    // Sessions
+    getMySessions: async (): Promise<Session[]> => {
+        const res = await api.get('/mentor-review/sessions');
+        return res.data;
     },
-
     startSession: async (bookingId: number) => {
-        const response = await api.post('/mentors/sessions/start', { booking_id: bookingId });
-        return response.data;
+        const res = await api.post(`/mentor-review/sessions/start`, { booking_id: bookingId });
+        return res.data;
     },
-
     endSession: async (sessionId: number, notes?: string) => {
-        const response = await api.post(`/mentors/sessions/${sessionId}/end`, { notes });
-        return response.data;
+        const res = await api.post(`/mentor-review/sessions/${sessionId}/end`, { notes });
+        return res.data;
     },
-
     updateSessionNotes: async (sessionId: number, notes: string) => {
-        const response = await api.put(`/mentors/sessions/${sessionId}/notes`, { notes });
-        return response.data;
+        const res = await api.put(`/mentor-review/sessions/${sessionId}/notes`, { notes });
+        return res.data;
     },
 
-    // 4. Assessment & Feedback
-    createAssessment: async (data: Omit<Assessment, 'assessment_id' | 'created_at'>) => {
-        const response = await api.post('/mentors/assessments', data);
-        return response.data;
+    // Session Assessments (from History page)
+    getSessionAssessment: async (sessionId: number): Promise<Assessment> => {
+        const res = await api.get(`/mentor-review/sessions/${sessionId}/assessment`);
+        return res.data;
+    },
+    createSessionAssessment: async (data: Omit<Assessment, 'assessment_id'>): Promise<Assessment> => {
+        const res = await api.post(`/mentor-review/assessments`, data);
+        return res.data;
     },
 
-    getSessionAssessment: async (sessionId: number) => {
-        const response = await api.get<Assessment>(`/mentors/sessions/${sessionId}/assessment`);
-        return response.data;
+    // Reviews
+    getMyReviews: async () => {
+        const res = await api.get('/reviews/me');
+        return res.data;
+    },
+    submitReview: async (data: any) => {
+        const res = await api.post('/reviews/submit', data);
+        return res.data;
     },
 
-    // 5. Resource Library
+    // Resources
     getMyResources: async () => {
-        const response = await api.get<Resource[]>('/mentors/resources');
-        return response.data;
+        const res = await api.get('/mentor-review/resources');
+        return res.data;
+    },
+    createResource: async (data: Omit<Resource, 'resource_id'>) => {
+        const res = await api.post('/mentor-review/resources', data);
+        return res.data;
+    },
+    deleteResource: async (id: number) => {
+        const res = await api.delete(`/mentor/resources/${id}`);
+        return res.data;
     },
 
-    createResource: async (data: Omit<Resource, 'resource_id' | 'mentor_id' | 'created_at'>) => {
-        const response = await api.post('/mentors/resources', data);
-        return response.data;
+    // Vocab Suggestions
+    createVocabSuggestion: async (data: any) => {
+        const res = await api.post('/mentor/vocab-suggestions', data);
+        return res.data;
+    },
+    getMyVocabSuggestions: async () => {
+        const res = await api.get('/mentor/vocab-suggestions');
+        return res.data;
     },
 
-    deleteResource: async (resourceId: number) => {
-        const response = await api.delete(`/mentors/resources/${resourceId}`);
-        return response.data;
+    // Simple Assessments (from Assessments page - after booking)
+    createAssessment: async (data: { booking_id: number; score: number; feedback: string; level_assigned?: string }) => {
+        const res = await api.post('/mentor/assessments', data);
+        return res.data;
+    },
+    getMyAssessments: async () => {
+        const res = await api.get('/mentor/assessments');
+        return res.data;
     },
 
-    // 6. Booking (Learner)
-    createBooking: async (slot_id: number) => {
-        const response = await api.post('/bookings/create', { slot_id });
-        return response.data;
-    },
-
-    // 7. Admin Verification
-    verifyMentor: async (mentor_id: number) => {
-        const response = await api.put(`/mentors/${mentor_id}/verify`);
-        return response.data;
-    },
-
-    // 8. Reviews
-    createReview: async (data: { booking_id: number; score: number; feedback?: string }) => {
-        const response = await api.post('/mentors/reviews', data);
-        return response.data;
+    // Admin Helpers
+    verifyMentor: async (id: number, status: string = 'VERIFIED') => {
+        const res = await api.put(`/admin/mentors/${id}/verify`, null, { params: { status } });
+        return res.data;
     }
 };

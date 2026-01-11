@@ -11,7 +11,8 @@ import {
   MessageCircle,
   Globe,
   Award,
-  Play
+  Play,
+  Minus
 } from 'lucide-react';
 import { topicService, Topic } from '@/services/topicService';
 import { useAuth } from '@/context/AuthContext';
@@ -276,7 +277,7 @@ export default function Home() {
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center gap-3 text-gray-600 font-medium"><CheckCircle size={20} className="text-green-500" /> 3 Topic cơ bản</li>
                 <li className="flex items-center gap-3 text-gray-600 font-medium"><CheckCircle size={20} className="text-green-500" /> AI Chat cơ bản</li>
-                <li className="flex items-center gap-3 text-gray-400 font-medium"><circle r={3} className="fill-current" /> Không có Mentor</li>
+                <li className="flex items-center gap-3 text-gray-400 font-medium"><Minus size={20} /> Không có Mentor</li>
               </ul>
               <Link href="/register" className="block w-full py-4 border-2 border-[#007bff] text-[#007bff] text-center font-bold rounded-xl hover:bg-[#007bff] hover:text-white transition-all">Đăng ký ngay</Link>
             </div>
@@ -293,7 +294,7 @@ export default function Home() {
                 <li className="flex items-center gap-3 text-white font-medium"><CheckCircle size={20} className="text-yellow-400" /> Mở khóa toàn bộ Topic</li>
                 <li className="flex items-center gap-3 text-white font-medium"><CheckCircle size={20} className="text-yellow-400" /> AI Feedback chi tiết</li>
                 <li className="flex items-center gap-3 text-white font-medium"><CheckCircle size={20} className="text-yellow-400" /> Lộ trình cá nhân hóa</li>
-                <li className="flex items-center gap-3 text-blue-200 font-medium"><circle r={3} className="fill-current" /> Không có Mentor</li>
+                <li className="flex items-center gap-3 text-blue-200 font-medium"><Minus size={20} /> Không có Mentor</li>
               </ul>
               <Link href="/register" className="block w-full py-4 bg-white text-[#007bff] text-center font-bold rounded-xl hover:shadow-lg transition-all">Dùng thử miễn phí</Link>
             </div>

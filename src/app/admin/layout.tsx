@@ -7,7 +7,13 @@ import {
     BookOpen,
     MessageSquare,
     LogOut,
-    UserCheck
+    UserCheck,
+    HelpCircle,
+    FileText,
+    Shield,
+    Package,
+    Receipt,
+    BarChart3
 } from "lucide-react";
 import clsx from "clsx";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -27,6 +33,12 @@ export default function AdminLayout({
         { name: "Mentors", href: "/admin/mentors", icon: UserCheck },
         { name: "Topics", href: "/admin/topics", icon: BookOpen },
         { name: "Scenarios", href: "/admin/scenarios", icon: MessageSquare },
+        { name: "Gói dịch vụ", href: "/admin/packages", icon: Package },
+        { name: "Lịch sử mua", href: "/admin/purchases", icon: Receipt },
+        { name: "Báo cáo", href: "/admin/reports", icon: BarChart3 },
+        { name: "Hỗ trợ", href: "/admin/support", icon: HelpCircle },
+        { name: "Kiểm duyệt", href: "/admin/moderation", icon: Shield },
+        { name: "Chính sách", href: "/admin/policies", icon: FileText },
     ];
 
     return (

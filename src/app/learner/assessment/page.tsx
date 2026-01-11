@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { mockService, Question, AssessmentResult } from '@/services/mockService';
+import { proficiencyService, Question, AssessmentResult } from '@/services/proficiencyService';
 import { Play, Mic, CheckCircle, ArrowRight, Award, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
@@ -20,9 +20,20 @@ export default function AssessmentPage() {
         loadQuestions();
     }, []);
 
+    const [testId, setTestId] = useState<number | null>(null);
+
+    useEffect(() => {
+        loadQuestions();
+    }, []);
+
     const loadQuestions = async () => {
-        const data = await mockService.getAssessmentQuestions();
-        setQuestions(data);
+        try {
+            const data = await proficiencyService.getAssessmentTest();
+            setQuestions(data.questions);
+            setTestId(data.id);
+        } catch (error) {
+            toast.error("Lỗi tải bài kiểm tra");
+        }
     };
 
     const handleStart = () => setStep('test');
@@ -32,14 +43,48 @@ export default function AssessmentPage() {
     };
 
     const handleRecordToggle = () => {
-        if (!recording) {
-            setRecording(true);
-            // Simulate recording
-            setTimeout(() => {
+        if (!('webkitSpeechRecognition' in window)) {
+            toast.error("Trình duyệt không hỗ trợ Web Speech API");
+            return;
+        }
+
+        if (recording) {
+            // STOP
+            setRecording(false);
+            // Logic handled in onend or manual stop
+            (window as any).speechRecognitionInstance?.stop();
+        } else {
+            // START
+            const SpeechRecognition = (window as any).webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.continuous = false; // Short answer
+            recognition.interimResults = false;
+
+            (window as any).speechRecognitionInstance = recognition;
+
+            recognition.onstart = () => {
+                setRecording(true);
+                toast("Đang lắng nghe...", { icon: '🎙️' });
+            };
+
+            recognition.onresult = (event: any) => {
+                const text = event.results[0][0].transcript;
+                setAnswers({ ...answers, [currentQIndex]: text });
+                toast.success(`Đã thu âm: "${text}"`);
+            };
+
+            recognition.onerror = (event: any) => {
+                console.error(event.error);
                 setRecording(false);
-                setAnswers({ ...answers, [currentQIndex]: "audio_blob_placeholder" });
-                toast.success("Đã thu âm!");
-            }, 2000);
+                toast.error("Lỗi thu âm");
+            };
+
+            recognition.onend = () => {
+                setRecording(false);
+            };
+
+            recognition.start();
         }
     };
 
@@ -50,9 +95,15 @@ export default function AssessmentPage() {
             // Submit
             setLoading(true);
             try {
-                const res = await mockService.submitAssessment(answers);
+                // Find speaking text if any
+                // Assuming last question is speaking or type='pronunciation'
+                const speakingQIndex = questions.findIndex(q => q.type === 'pronunciation');
+                const speakingText = speakingQIndex >= 0 ? answers[speakingQIndex] : undefined;
+
+                const res = await proficiencyService.submitTest(testId!, answers, speakingText);
                 setResult(res);
                 setStep('result');
+                toast.success("Đã có kết quả!");
             } catch (error) {
                 toast.error("Lỗi nộp bài");
             } finally {
@@ -133,8 +184,8 @@ export default function AssessmentPage() {
                                                 key={idx}
                                                 onClick={() => handleOptionSelect(opt)}
                                                 className={`p-4 rounded-xl border-2 text-left font-medium transition-all ${answers[currentQIndex] === opt
-                                                        ? 'border-[#007bff] bg-blue-50 text-[#007bff]'
-                                                        : 'border-gray-100 hover:border-blue-200'
+                                                    ? 'border-[#007bff] bg-blue-50 text-[#007bff]'
+                                                    : 'border-gray-100 hover:border-blue-200'
                                                     }`}
                                             >
                                                 {opt}
@@ -146,17 +197,22 @@ export default function AssessmentPage() {
                                         <button
                                             onClick={handleRecordToggle}
                                             className={`w-20 h-20 rounded-full flex items-center justify-center transition-all ${recording
-                                                    ? 'bg-red-500 animate-pulse ring-4 ring-red-200'
-                                                    : answers[currentQIndex]
-                                                        ? 'bg-green-500 ring-4 ring-green-200'
-                                                        : 'bg-[#007bff] hover:scale-105'
+                                                ? 'bg-red-500 animate-pulse ring-4 ring-red-200'
+                                                : answers[currentQIndex]
+                                                    ? 'bg-green-500 ring-4 ring-green-200'
+                                                    : 'bg-[#007bff] hover:scale-105'
                                                 }`}
                                         >
                                             {recording ? <div className="w-8 h-8 bg-white rounded-md" /> : <Mic size={32} className="text-white" />}
                                         </button>
                                         <p className="mt-4 text-gray-500 font-medium">
-                                            {recording ? "Đang thu âm..." : answers[currentQIndex] ? "Đã thu âm xong" : "Chạm để nói"}
+                                            {recording ? "Đang thu âm..." : answers[currentQIndex] ? `Đã trả lời: "${answers[currentQIndex]}"` : "Chạm để nói"}
                                         </p>
+                                        {answers[currentQIndex] && (
+                                            <button onClick={() => setAnswers({ ...answers, [currentQIndex]: "" })} className="mt-2 text-xs text-red-500 font-bold hover:underline">
+                                                Thu âm lại
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>

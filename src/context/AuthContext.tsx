@@ -33,10 +33,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             const response = await api.get("/users/me");
             setUser(response.data);
-        } catch (error) {
-            console.error("Failed to fetch user profile", error);
-            // If 401, token might be invalid
-            logout();
+        } catch (error: any) {
+            if (error.response && error.response.status === 401) {
+                // Token expired or invalid, fail silently and logout
+                logout();
+            } else {
+                console.error("Failed to fetch user profile", error);
+            }
         }
     };
 

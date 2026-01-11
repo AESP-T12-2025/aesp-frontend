@@ -2,15 +2,17 @@ import api from "@/lib/api";
 
 export interface Topic {
     topic_id: number;
-    name: string; // Changed from title to match backend
+    name: string;
     description?: string;
     image_url?: string;
-    // category_id?: number; // Add if needed
+    industry?: string; // NEW
+    // category_id?: number; 
 }
 
 export const topicService = {
-    getAll: async () => {
-        const response = await api.get<Topic[]>("/topics");
+    getAll: async (industry?: string) => {
+        const url = industry && industry !== 'ALL' ? `/topics?industry=${industry}` : '/topics';
+        const response = await api.get<Topic[]>(url);
         return response.data;
     },
 

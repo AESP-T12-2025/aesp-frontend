@@ -22,7 +22,7 @@ export default function LearnerMentorsPage() {
     const loadMentors = async () => {
         try {
             const data = await mentorService.getAllMentors();
-            setMentors(data.filter(m => m.verification_status === 'VERIFIED'));
+            setMentors(data.filter((m: MentorProfile) => m.verification_status === 'VERIFIED'));
         } catch (error) {
             toast.error("Lỗi tải danh sách Mentor");
         } finally {

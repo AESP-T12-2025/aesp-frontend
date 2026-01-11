@@ -14,20 +14,11 @@ export default function ScenariosPage() {
   useEffect(() => {
     const fetch = async () => {
       try {
-        // Fetch all scenarios (might need a better API for this later)
-        // For now, assume this service method exists or we use a mock
-        // Actually mock service has getScenarios() or something similar?
-        // Using mockService from services/mockService or scenarioService
-        // Assuming scenarioService.getAll() exists or we mock it here since it's skeleton
-        const data = await scenarioService.getAll(); // Assuming this is added or using mock
+        const data = await scenarioService.getAll();
         setScenarios(data);
       } catch (error) {
-        // If API fails, fallback to mock data for demo
-        setScenarios([
-          { scenario_id: 1, title: 'Job Interview Basic', description: 'Practice common interview questions.', difficulty_level: 'Basic', topic_id: 1 },
-          { scenario_id: 2, title: 'Ordering Coffee', description: 'How to order drinks at a cafe.', difficulty_level: 'Basic', topic_id: 2 },
-          { scenario_id: 3, title: 'Business Meeting', description: 'Discussing project timelines.', difficulty_level: 'Advanced', topic_id: 3 },
-        ]);
+        console.error("Failed to fetch scenarios", error);
+        // toast.error("Không thể tải danh sách tình huống");
       } finally {
         setIsLoading(false);
       }
