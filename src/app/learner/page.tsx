@@ -1,16 +1,60 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { ArrowRight, Trophy, Map, Crown, Zap, Target } from 'lucide-react';
+import { ArrowRight, Trophy, Map, Crown, Zap, Target, Flame } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { proficiencyService } from '@/services/proficiencyService';
+import { useState, useEffect } from 'react';
 
 export default function LearnerDashboard() {
   const { user } = useAuth();
 
-  const stats = [
-    { label: 'Ngày luyện tập', value: '12', icon: <Zap size={24} />, color: 'bg-orange-100 text-orange-600' },
-    { label: 'Điểm XP', value: '1,250', icon: <Target size={24} />, color: 'bg-blue-100 text-blue-600' },
-    { label: 'Hạng hiện tại', value: 'Silver', icon: <Trophy size={24} />, color: 'bg-yellow-100 text-yellow-600' },
+  const [stats, setStats] = useState({
+    practiceDays: 0,
+    xp: 0,
+    rank: 'Bronze',
+    streak: 0
+  });
+
+  const [currentPath, setCurrentPath] = useState<any>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const { userService } = await import('@/services/userService');
+      const { proficiencyService } = await import('@/services/proficiencyService');
+
+      const [statsData, pathData] = await Promise.all([
+        userService.getStats(),
+        proficiencyService.getMyPath()
+      ]);
+
+      setCurrentPath(pathData);
+      setStats({
+        practiceDays: statsData.lessons_completed || 0,
+        xp: statsData.xp || 0,
+        rank: getRank(statsData.xp || 0),
+        streak: statsData.streak || 0
+      });
+    } catch (e) {
+      console.log("Failed to load dashboard data");
+    }
+  };
+
+  const getRank = (xp: number) => {
+    if (xp > 1000) return 'Gold';
+    if (xp > 500) return 'Silver';
+    return 'Bronze';
+  }
+
+  const statItems = [
+    { label: 'Chuỗi ngày', value: `${stats.streak} 🔥`, icon: <Flame size={24} />, color: 'bg-red-100 text-red-600' },
+    { label: 'Điểm XP', value: stats.xp.toLocaleString(), icon: <Target size={24} />, color: 'bg-blue-100 text-blue-600' },
+    { label: 'Bài học xong', value: stats.practiceDays.toString(), icon: <Zap size={24} />, color: 'bg-orange-100 text-orange-600' },
+    { label: 'Hạng', value: stats.rank, icon: <Trophy size={24} />, color: 'bg-yellow-100 text-yellow-600' },
   ];
 
   return (
@@ -29,7 +73,7 @@ export default function LearnerDashboard() {
 
       {/* 2. STATS OVERVIEW */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {stats.map((stat, index) => (
+        {statItems.map((stat, index) => (
           <div key={index} className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${stat.color}`}>
               {stat.icon}
@@ -54,11 +98,27 @@ export default function LearnerDashboard() {
             <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mb-6">
               <Map size={24} />
             </div>
-            <h3 className="text-2xl font-black text-gray-900 mb-2">Lộ trình học tập</h3>
-            <p className="text-gray-500 font-medium mb-8 max-w-sm">Tiếp tục bài học B1 Intermediate: "Daily Conversation" tại Node 4.</p>
-            <span className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold group-hover:bg-indigo-700 transition-colors">
-              Tiếp tục học <ArrowRight size={20} />
-            </span>
+            {currentPath ? (
+              <>
+                <h3 className="text-2xl font-black text-gray-900 mb-2">Lộ trình học tập</h3>
+                <p className="text-gray-500 font-medium mb-8 max-w-sm">
+                  Trình độ hiện tại: <span className="text-indigo-600 font-bold">{currentPath.current_level}</span>
+                  <br />
+                  <span className="text-sm">Tiếp tục bài học tiếp theo trong lộ trình của bạn.</span>
+                </p>
+                <span className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold group-hover:bg-indigo-700 transition-colors">
+                  Tiếp tục học {currentPath.current_level} <ArrowRight size={20} />
+                </span>
+              </>
+            ) : (
+              <>
+                <h3 className="text-2xl font-black text-gray-900 mb-2">Lộ trình học tập</h3>
+                <p className="text-gray-500 font-medium mb-8 max-w-sm">Chưa có lộ trình. Hãy làm bài kiểm tra ngay!</p>
+                <span className="inline-flex items-center gap-2 px-6 py-3 bg-gray-400 text-white rounded-xl font-bold">
+                  Chưa kích hoạt
+                </span>
+              </>
+            )}
           </div>
         </Link>
 

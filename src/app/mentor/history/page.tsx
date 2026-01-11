@@ -63,7 +63,7 @@ export default function MentorHistoryPage() {
                 assessmentForm.vocabulary_score
             ) / 4;
 
-            await mentorService.createAssessment({
+            await mentorService.createSessionAssessment({
                 session_id: selectedSession.session_id!,
                 ...assessmentForm,
                 overall_score

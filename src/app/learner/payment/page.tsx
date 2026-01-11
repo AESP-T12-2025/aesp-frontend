@@ -1,33 +1,73 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { mockService } from '@/services/mockService'; // We can use mockService here later if needed
-import { Shield, CreditCard, CheckCircle, Lock } from 'lucide-react';
+import { paymentService, ServicePackage } from '@/services/paymentService';
+import { Shield, CreditCard, CheckCircle, Lock, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 
 export default function PaymentPage() {
     const searchParams = useSearchParams();
-    const pkgId = searchParams?.get('pkg') || 'bx_basic';
+    const pkgIdParam = searchParams?.get('pkg');
     const router = useRouter();
 
-    // Mock package data logic just for display
-    const pkgName = pkgId === 'bx_pro' ? 'Pro AI' : pkgId === 'bx_mentor' ? 'Mentor 1-1' : 'Unknown';
-    const pkgPrice = pkgId === 'bx_pro' ? 199000 : pkgId === 'bx_mentor' ? 999000 : 0;
-
+    const [selectedPkg, setSelectedPkg] = useState<ServicePackage | null>(null);
+    const [loading, setLoading] = useState(true);
     const [paymentMethod, setPaymentMethod] = useState('vnpay');
     const [isProcessing, setIsProcessing] = useState(false);
 
-    const handlePayment = () => {
-        setIsProcessing(true);
-        // Simulate API call
-        setTimeout(() => {
-            setIsProcessing(false);
-            toast.success("Thanh toán thành công!");
-            router.push('/learner?success=true');
-        }, 2000);
+    useEffect(() => {
+        loadPackageDetails();
+    }, [pkgIdParam]);
+
+    const loadPackageDetails = async () => {
+        if (!pkgIdParam) {
+            setLoading(false);
+            return;
+        }
+        try {
+            const packages = await paymentService.getPackages();
+            const pkg = packages.find(p => p.id === Number(pkgIdParam));
+            if (pkg) {
+                setSelectedPkg(pkg);
+            } else {
+                toast.error("Gói dịch vụ không tồn tại");
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
     };
+
+    const handlePayment = async () => {
+        if (!selectedPkg) return;
+        setIsProcessing(true);
+        try {
+            const res = await paymentService.createTransaction({
+                package_id: selectedPkg.id,
+                payment_method: paymentMethod.toUpperCase()
+            });
+            toast.success("Thanh toán thành công!");
+            // Redirect to success page or learner dashboard with param
+            router.push('/learner?success=true');
+        } catch (error) {
+            toast.error("Giao dịch thất bại");
+            console.error(error);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
+
+    if (!selectedPkg) return (
+        <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center flex-col">
+            <h2 className="text-xl font-bold text-gray-700 mb-4">Không tìm thấy gói dịch vụ</h2>
+            <button onClick={() => router.push('/learner/packages')} className="text-blue-600 font-bold hover:underline">Quay lại danh sách</button>
+        </div>
+    );
 
     return (
         <ProtectedRoute allowedRoles={['LEARNER']}>
@@ -43,18 +83,18 @@ export default function PaymentPage() {
                         <div className="space-y-6 relative z-10">
                             <div>
                                 <p className="text-blue-200 text-sm font-bold uppercase tracking-wider mb-1">Gói dịch vụ</p>
-                                <h3 className="text-3xl font-black">{pkgName} Plan</h3>
+                                <h3 className="text-3xl font-black">{selectedPkg.name}</h3>
                             </div>
 
                             <div>
                                 <p className="text-blue-200 text-sm font-bold uppercase tracking-wider mb-1">Thời hạn</p>
-                                <p className="text-xl font-bold">1 Tháng</p>
+                                <p className="text-xl font-bold">{selectedPkg.duration_days} Ngày</p>
                             </div>
 
                             <div className="pt-8 border-t border-white/20">
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="text-blue-100 font-medium">Tạm tính</span>
-                                    <span className="font-bold">{pkgPrice.toLocaleString()} đ</span>
+                                    <span className="font-bold">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(selectedPkg.price)}</span>
                                 </div>
                                 <div className="flex justify-between items-center mb-6">
                                     <span className="text-blue-100 font-medium">Giảm giá</span>
@@ -62,7 +102,7 @@ export default function PaymentPage() {
                                 </div>
                                 <div className="flex justify-between items-center text-3xl font-black">
                                     <span>Tổng cộng</span>
-                                    <span>{pkgPrice.toLocaleString()} đ</span>
+                                    <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(selectedPkg.price)}</span>
                                 </div>
                             </div>
                         </div>
@@ -111,10 +151,10 @@ export default function PaymentPage() {
                             className="w-full py-4 bg-gray-900 text-white rounded-xl font-bold text-lg hover:bg-black transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
                             {isProcessing ? (
-                                <>Đang xử lý...</>
+                                <><Loader2 className="animate-spin" /> Đang xử lý...</>
                             ) : (
                                 <>
-                                    <Lock size={18} /> Thanh toán ngay {pkgPrice.toLocaleString()} đ
+                                    <Lock size={18} /> Thanh toán ngay
                                 </>
                             )}
                         </button>

@@ -1,22 +1,60 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { mockService, Package } from '@/services/mockService';
-import { CheckCircle, Zap, Star, Shield, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import { CheckCircle, Zap, Star, Shield, ArrowRight, Loader2 } from 'lucide-react';
+import { paymentService, ServicePackage } from '@/services/paymentService';
+import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 export default function PackagesPage() {
-    const [packages, setPackages] = useState<Package[]>([]);
+    const [packages, setPackages] = useState<ServicePackage[]>([]);
     const [loading, setLoading] = useState(true);
+    const [filter, setFilter] = useState<boolean | null>(null);
+    const router = useRouter();
 
     useEffect(() => {
-        const load = async () => {
-            const data = await mockService.getPackages();
+        loadPackages();
+    }, [filter]);
+
+    const loadPackages = async () => {
+        setLoading(true); // Show loading when switching
+        try {
+            const data = await paymentService.getPackages(filter === null ? undefined : filter);
             setPackages(data);
+        } catch (error) {
+            console.error("Failed to load packages", error);
+            // Fallback for demo if DB is empty
+            setPackages([]);
+        } finally {
             setLoading(false);
-        };
-        load();
-    }, []);
+        }
+    };
+
+    const handleBuy = async (pkgId: number) => {
+        try {
+            await paymentService.createTransaction({
+                package_id: pkgId,
+                payment_method: 'MOCK_BANKING'
+            });
+            toast.success("Đăng ký thành công!");
+            router.push('/learner');
+        } catch (error) {
+            toast.error("Lỗi thanh toán");
+            console.error(error);
+        }
+    };
+
+    // Helper to map DB packages to UI styles (since DB lacks these fields)
+    const getPackageStyle = (pkg: ServicePackage) => {
+        const lowerName = pkg.name.toLowerCase();
+        if (lowerName.includes('pro') || lowerName.includes('ai')) {
+            return { color: 'blue', isPopular: true };
+        }
+        if (lowerName.includes('mentor')) {
+            return { color: 'purple', isPopular: false };
+        }
+        return { color: 'gray', isPopular: false };
+    };
 
     const getColorClass = (color: string) => {
         switch (color) {
@@ -26,65 +64,101 @@ export default function PackagesPage() {
         }
     };
 
+    if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
+
     return (
         <ProtectedRoute allowedRoles={['LEARNER']}>
             <div className="min-h-screen bg-gray-50 p-8">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-12">
                         <h1 className="text-4xl font-black text-gray-900 mb-4">Nâng cấp tài khoản</h1>
-                        <p className="text-xl text-gray-500 max-w-2xl mx-auto">
+                        <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-8">
                             Mở khóa toàn bộ tính năng AI và Mentor để tăng tốc độ học gấp 3 lần.
                         </p>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-                        {packages.map(pkg => (
-                            <div
-                                key={pkg.id}
-                                className={`rounded-[32px] p-8 transition-all duration-300 relative ${pkg.isPopular
-                                    ? 'shadow-2xl scale-105 z-10 ' + getColorClass(pkg.color)
-                                    : 'bg-white shadow-lg border border-gray-100 hover:shadow-xl'
-                                    }`}
-                            >
-                                {pkg.isPopular && (
-                                    <div className="absolute top-0 center w-full -mt-4 text-center">
-                                        <span className="bg-yellow-400 text-yellow-900 text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-wider">
-                                            Most Popular
-                                        </span>
-                                    </div>
-                                )}
-
-                                <h3 className={`text-2xl font-black mb-2 ${pkg.isPopular ? 'text-white' : 'text-gray-900'}`}>{pkg.name}</h3>
-                                <div className="flex items-baseline mb-8">
-                                    <span className={`text-4xl font-black ${pkg.isPopular ? 'text-white' : 'text-[#007bff]'}`}>
-                                        {pkg.price === 0 ? 'Free' : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pkg.price)}
-                                    </span>
-                                    <span className={`ml-2 text-sm font-bold ${pkg.isPopular ? 'text-white/80' : 'text-gray-400'}`}>/tháng</span>
-                                </div>
-
-                                <ul className="space-y-4 mb-8">
-                                    {pkg.features.map((feat, i) => (
-                                        <li key={i} className={`flex items-start gap-3 text-sm font-bold ${pkg.isPopular ? 'text-white' : 'text-gray-600'}`}>
-                                            <CheckCircle size={20} className={pkg.isPopular ? 'text-yellow-400' : 'text-green-500'} />
-                                            {feat}
-                                        </li>
-                                    ))}
-                                </ul>
-
-                                <Link
-                                    href={`/learner/payment?pkg=${pkg.id}`}
-                                    className={`w-full py-4 rounded-xl font-black text-center block transition-all ${pkg.isPopular
-                                        ? 'bg-white text-[#007bff] hover:bg-gray-100'
-                                        : 'bg-[#007bff] text-white hover:bg-blue-600'
+                        {/* Filter Tabs */}
+                        <div className="inline-flex bg-white p-1 rounded-2xl shadow-sm border border-gray-100">
+                            {[
+                                { label: 'Tất cả', value: null },
+                                { label: 'Tự học (AI)', value: false },
+                                { label: 'Có Mentor', value: true },
+                            ].map((tab) => (
+                                <button
+                                    key={String(tab.value)}
+                                    onClick={() => setFilter(tab.value)}
+                                    className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${filter === tab.value
+                                        ? 'bg-[#007bff] text-white shadow-md shadow-blue-200'
+                                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                                         }`}
                                 >
-                                    {pkg.price === 0 ? 'Đang sử dụng' : 'Chọn gói này'}
-                                </Link>
-                            </div>
-                        ))}
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* FEATURE COMPARISON TABLE */}
+                    {loading ? (
+                        <div className="flex justify-center h-64 items-center"><Loader2 className="animate-spin text-blue-600" /></div>
+                    ) : packages.length === 0 ? (
+                        <div className="text-center text-gray-500">Hiện chưa có gói cước nào phù hợp.</div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+                            {packages.map(pkg => {
+                                const { color, isPopular } = getPackageStyle(pkg);
+                                // Parse features if needed (assuming backend sends list or dict)
+                                const featuresList = Array.isArray(pkg.features) ? pkg.features :
+                                    (typeof pkg.features === 'string' ? JSON.parse(pkg.features) :
+                                        (typeof pkg.features === 'object' ? Object.keys(pkg.features || {}) : []));
+
+                                return (
+                                    <div
+                                        key={pkg.id}
+                                        className={`rounded-[32px] p-8 transition-all duration-300 relative ${isPopular
+                                            ? 'shadow-2xl scale-105 z-10 ' + getColorClass(color)
+                                            : 'bg-white shadow-lg border border-gray-100 hover:shadow-xl'
+                                            }`}
+                                    >
+                                        {isPopular && (
+                                            <div className="absolute top-0 center w-full -mt-4 text-center">
+                                                <span className="bg-yellow-400 text-yellow-900 text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-wider">
+                                                    Most Popular
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        <h3 className={`text-2xl font-black mb-2 ${isPopular ? 'text-white' : 'text-gray-900'}`}>{pkg.name}</h3>
+                                        <div className="flex items-baseline mb-8">
+                                            <span className={`text-4xl font-black ${isPopular ? 'text-white' : 'text-[#007bff]'}`}>
+                                                {pkg.price === 0 ? 'Free' : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(pkg.price)}
+                                            </span>
+                                            <span className={`ml-2 text-sm font-bold ${isPopular ? 'text-white/80' : 'text-gray-400'}`}>/tháng</span>
+                                        </div>
+
+                                        <ul className="space-y-4 mb-8">
+                                            {featuresList.map((feat: any, i: number) => (
+                                                <li key={i} className={`flex items-start gap-3 text-sm font-bold ${isPopular ? 'text-white' : 'text-gray-600'}`}>
+                                                    <CheckCircle size={20} className={isPopular ? 'text-yellow-400' : 'text-green-500'} />
+                                                    {String(feat)}
+                                                </li>
+                                            ))}
+                                        </ul>
+
+                                        <button
+                                            onClick={() => handleBuy(pkg.id)}
+                                            className={`w-full py-4 rounded-xl font-black text-center block transition-all ${isPopular
+                                                ? 'bg-white text-[#007bff] hover:bg-gray-100'
+                                                : 'bg-[#007bff] text-white hover:bg-blue-600'
+                                                }`}
+                                        >
+                                            {pkg.price === 0 ? 'Đang sử dụng' : 'Chọn gói này'}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {/* Comparison Table (Static for now as it describes fixed tiers) */}
                     <div className="mt-20">
                         <h2 className="text-3xl font-black text-center text-gray-900 mb-12">So sánh chi tiết quyền lợi</h2>
                         <div className="bg-white rounded-[32px] shadow-lg border border-gray-100 overflow-hidden">
@@ -105,8 +179,6 @@ export default function PackagesPage() {
                                             { name: "Lộ trình học cá nhân hóa", basic: true, pro: true, mentor: true },
                                             { name: "Buổi học 1-1 với Mentor", basic: false, pro: false, mentor: "4 buổi/tháng" },
                                             { name: "Chứng chỉ hoàn thành", basic: false, pro: true, mentor: true },
-                                            { name: "Hỗ trợ ưu tiên 24/7", basic: false, pro: false, mentor: true },
-                                            { name: "Truy cập thư viện tài liệu VIP", basic: false, pro: true, mentor: true },
                                         ].map((row, idx) => (
                                             <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
                                                 <td className="p-6 font-medium text-gray-700">{row.name}</td>

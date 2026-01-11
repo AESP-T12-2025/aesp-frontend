@@ -12,8 +12,6 @@ const api = axios.create({
 
 console.log("Current API URL:", API_URL); // Debug log
 
-console.log("Current API URL:", API_URL); // Debug log
-
 // Add interceptor to include token if available (Week 1 placeholder)
 api.interceptors.request.use((config) => {
     if (typeof window !== "undefined") {

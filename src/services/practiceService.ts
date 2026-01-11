@@ -17,19 +17,18 @@ export const practiceService = {
   },
 
   startSession: async (scenarioId: string) => {
-    const res = await api.post('/speaking-sessions', { 
-      scenario_id: Number(scenarioId) 
+    const res = await api.post('/speaking-sessions', {
+      scenario_id: Number(scenarioId)
     });
     return res.data;
   },
 
-  
-  submitAudio: async (sessionId: number, audioBlob: Blob) => {
-    const formData = new FormData();
-    formData.append('audio', audioBlob, 'recording.wav');
-
-    const res = await api.post(`/speaking-sessions/${sessionId}/submit`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+  // FIXED: Use Text Analysis (Web Speech API result) instead of Audio Upload
+  analyzeSpeech: async (text: string, sessionId?: number, duration: number = 0) => {
+    const res = await api.post('/ai/analyze', {
+      text,
+      session_id: sessionId,
+      duration_seconds: duration
     });
     return res.data;
   },

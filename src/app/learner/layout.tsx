@@ -8,16 +8,36 @@ import { useAuth } from '@/context/AuthContext';
 export default function LearnerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, logout } = useAuth(); // Use Auth context
+  const [unreadCount, setUnreadCount] = React.useState(0);
+
+  React.useEffect(() => {
+    // Poll for notifications or fetch once
+    const fetchNotis = async () => {
+      try {
+        const { notificationService } = await import('@/services/notificationService');
+        const notis = await notificationService.getAll();
+        setUnreadCount(notis.filter((n: any) => !n.is_read).length);
+      } catch (e: any) {
+        if (e.response && e.response.status === 401) {
+          // Silently ignore 401s here, AuthContext handles globally or we let it slide
+        } else {
+          console.error(e);
+        }
+      }
+    };
+    if (user) fetchNotis();
+  }, [user, pathname]); // Re-fetch on nav change is a simple way to keep fresh
 
   const menuItems = [
     { name: 'Dashboard', href: '/learner', icon: '📊' },
     { name: 'Lộ trình', href: '/learner/path', icon: '🗺️' },
     { name: 'Thư viện', href: '/learner/topics', icon: '📚' },
-    { name: 'Cộng đồng', href: '/learner/community', icon: '🌍' },
+    { name: 'Cộng đồng', href: '/learner/community', icon: '👥' },
     { name: 'Tìm Mentor', href: '/learner/mentors', icon: '👨‍🏫' },
+    { name: 'Thử thách', href: '/learner/challenges', icon: '🎯' },
     { name: 'Thành tựu', href: '/learner/achievements', icon: '🏆' },
     { name: 'Báo cáo', href: '/learner/reports', icon: '📈' },
-    { name: 'Nâng cấp', href: '/learner/packages', icon: '💎' },
+    { name: 'Subscription', href: '/learner/subscription', icon: '💎' },
     { name: 'Hồ sơ', href: '/profile', icon: '👤' },
   ];
 
@@ -89,7 +109,11 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
             <div className="flex items-center gap-6">
               <Link href="/learner/notifications" className="relative text-gray-400 hover:text-indigo-600 transition-colors">
                 <span className="text-xl">🔔</span>
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full border-2 border-white text-white text-[10px] font-bold flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </Link>
 
               <Link href="/profile" className="flex items-center gap-3 pl-6 border-l border-gray-200 hover:bg-gray-50 p-2 rounded-lg transition-colors">
