@@ -32,9 +32,19 @@ export interface Assessment {
 }
 
 export interface MentorProfile {
+    mentor_id?: number;
     full_name: string;
     bio: string;
     skills: string;
+    verification_status?: 'PENDING' | 'VERIFIED' | 'REJECTED';
+}
+
+export interface AvailabilitySlot {
+    slot_id: number;
+    mentor_id: number;
+    start_time: string;
+    end_time: string;
+    is_booked: boolean;
 }
 
 export const mentorService = {
@@ -137,6 +147,12 @@ export const mentorService = {
     },
     getMyAssessments: async () => {
         const res = await api.get('/mentor/assessments');
+        return res.data;
+    },
+
+    // Admin Helpers
+    verifyMentor: async (id: number, status: string = 'VERIFIED') => {
+        const res = await api.put(`/admin/mentors/${id}/verify`, null, { params: { status } });
         return res.data;
     }
 };

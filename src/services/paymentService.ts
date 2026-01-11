@@ -2,7 +2,7 @@ import api from '@/lib/api';
 
 export interface ServicePackage {
     package_id?: number;
-    id: number;
+    id?: number;
     name: string;
     description?: string;
     price: number;
@@ -36,7 +36,7 @@ export const paymentService = {
     },
 
     // Admin CRUD
-    createPackage: async (data: Omit<ServicePackage, 'package_id'>) => {
+    createPackage: async (data: Omit<ServicePackage, 'package_id' | 'id'>) => {
         const res = await api.post('/payment/packages', data);
         return res.data;
     },

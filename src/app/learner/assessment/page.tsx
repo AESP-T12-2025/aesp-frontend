@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { proficiencyService } from '@/services/proficiencyService';
+import { proficiencyService, Question, AssessmentResult } from '@/services/proficiencyService';
 import { Play, Mic, CheckCircle, ArrowRight, Award, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
@@ -52,7 +52,7 @@ export default function AssessmentPage() {
             // STOP
             setRecording(false);
             // Logic handled in onend or manual stop
-            window.speechRecognitionInstance?.stop();
+            (window as any).speechRecognitionInstance?.stop();
         } else {
             // START
             const SpeechRecognition = (window as any).webkitSpeechRecognition;

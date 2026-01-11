@@ -1,5 +1,18 @@
 import api from '@/lib/api';
 
+export interface Question {
+    id: number;
+    text: string;
+    type: 'grammar' | 'vocabulary' | 'pronunciation';
+    options?: string[];
+}
+
+export interface AssessmentResult {
+    score: number;
+    level: string;
+    feedback: string;
+}
+
 export const proficiencyService = {
     submitTest: async (testId: number, answers: any, speakingText?: string) => {
         const res = await api.post('/proficiency/submit', {

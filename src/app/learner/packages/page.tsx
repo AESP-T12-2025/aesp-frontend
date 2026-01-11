@@ -144,7 +144,7 @@ export default function PackagesPage() {
                                         </ul>
 
                                         <button
-                                            onClick={() => handleBuy(pkg.id)}
+                                            onClick={() => handleBuy(pkg.id!)}
                                             className={`w-full py-4 rounded-xl font-black text-center block transition-all ${isPopular
                                                 ? 'bg-white text-[#007bff] hover:bg-gray-100'
                                                 : 'bg-[#007bff] text-white hover:bg-blue-600'

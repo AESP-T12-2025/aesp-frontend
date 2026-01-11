@@ -46,7 +46,7 @@ export default function PaymentPage() {
         setIsProcessing(true);
         try {
             const res = await paymentService.createTransaction({
-                package_id: selectedPkg.id,
+                package_id: selectedPkg.id!,
                 payment_method: paymentMethod.toUpperCase()
             });
             toast.success("Thanh toán thành công!");

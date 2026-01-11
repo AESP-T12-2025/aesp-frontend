@@ -5,7 +5,7 @@ export const gamificationService = {
         const res = await api.get('/gamification/challenges');
         return res.data;
     },
-    joinChallenge: async (challengeId) => {
+    joinChallenge: async (challengeId: number) => {
         const res = await api.post(`/gamification/challenges/${challengeId}/join`);
         return res.data;
     },
