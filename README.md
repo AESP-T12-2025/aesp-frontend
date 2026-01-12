@@ -201,7 +201,7 @@ git push origin feature/ten-tinh-nang
 
 ## 📄 License
 
-Dự án này được phát triển cho mục đích học tập tại **UIT - Đại học Công nghệ Thông tin**.
+Dự án này được phát triển cho mục đích học tập tại **UTH - Đại học Giao thông Vận tải TP.HCM**.
 
 ---
 
