@@ -16,20 +16,41 @@
 # Misc
 .DS_Store
 *.pem
+Thumbs.db
 
 # Debug
 npm-debug.log*
 yarn-debug.log*
 ts-debug.log*
+*.log
 
 # Local env files
 .env*.local
+.env.local
+.env.production.local
 
-# Nodeenv
+# Nodeenv / Virtual environments
 /env
 /venv
 *.pyc
+__pycache__/
 
-# Legacy
+# Legacy folders (old code - DO NOT COMMIT)
+/_legacy
 /_legacy_v1
 /_legacy_v2
+
+# TypeScript build info
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Documentation (dev only)
+*_Diagram.md
+*_Analysis.md
+Package_Diagram.md
