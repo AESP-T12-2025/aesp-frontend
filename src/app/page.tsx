@@ -142,25 +142,28 @@ export default function Home() {
             {[
               {
                 icon: <MessageCircle size={32} />,
-                color: "blue",
+                bgColor: "bg-blue-50",
+                textColor: "text-blue-500",
                 title: "AI Chat & Feedback",
                 desc: "Trò chuyện với AI 24/7, nhận phản hồi chi tiết về từng lỗi ngữ pháp và phát âm ngay lập tức."
               },
               {
                 icon: <Globe size={32} />,
-                color: "indigo",
+                bgColor: "bg-indigo-50",
+                textColor: "text-indigo-500",
                 title: "Môi trường thoải mái",
                 desc: "Không còn nỗi sợ sai. Luyện tập trong không gian an toàn cho đến khi bạn sẵn sàng giao tiếp thực tế."
               },
               {
                 icon: <BookOpen size={32} />,
-                color: "pink",
+                bgColor: "bg-pink-50",
+                textColor: "text-pink-500",
                 title: "Lộ trình cá nhân hóa",
                 desc: "AI phân tích trình độ và tạo ra lộ trình học tập riêng biệt phù hợp với mục tiêu của bạn."
               }
             ].map((item, i) => (
               <div key={i} className="bg-white p-10 rounded-[32px] border border-gray-100 hover:shadow-xl transition-all hover:translate-y-[-5px]">
-                <div className={`w-16 h-16 rounded-2xl bg-${item.color}-50 text-${item.color}-500 flex items-center justify-center mb-8`}>
+                <div className={`w-16 h-16 rounded-2xl ${item.bgColor} ${item.textColor} flex items-center justify-center mb-8`}>
                   {item.icon}
                 </div>
                 <h3 className="text-2xl font-black text-gray-900 mb-4">{item.title}</h3>

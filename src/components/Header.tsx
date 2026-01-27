@@ -1,6 +1,7 @@
 "use client";
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { LogOut, User as UserIcon, Shield, BookOpen } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -49,9 +50,15 @@ export default function Header() {
                         {/* Profile & Logout */}
                         <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
                             <Link href="/profile" className="flex items-center gap-2 group cursor-pointer">
-                                <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center text-[#007bff] font-bold group-hover:bg-[#007bff] group-hover:text-white transition-all">
+                                <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center text-[#007bff] font-bold group-hover:bg-[#007bff] group-hover:text-white transition-all overflow-hidden">
                                     {user.avatar_url ? (
-                                        <img src={user.avatar_url} alt="Avt" className="w-full h-full rounded-full object-cover" />
+                                        <Image
+                                            src={user.avatar_url}
+                                            alt={user.full_name || "Avatar"}
+                                            width={36}
+                                            height={36}
+                                            className="w-full h-full rounded-full object-cover"
+                                        />
                                     ) : (
                                         <UserIcon size={18} />
                                     )}
