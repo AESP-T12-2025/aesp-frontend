@@ -18,7 +18,18 @@ export default function MentorResourcesPage() {
 
     // New State for Vocab
     const [activeTab, setActiveTab] = useState<'RESOURCES' | 'VOCAB'>('RESOURCES');
-    const [vocabSuggestions, setVocabSuggestions] = useState<any[]>([]);
+
+    interface VocabSuggestion {
+        id: number;
+        vocabulary: string;
+        collocations?: string;
+        idioms?: string;
+        tips?: string;
+        topic_id?: number;
+        created_at: string;
+    }
+
+    const [vocabSuggestions, setVocabSuggestions] = useState<VocabSuggestion[]>([]);
     const [vocabForm, setVocabForm] = useState({
         vocabulary: '',
         collocations: '',
@@ -28,32 +39,45 @@ export default function MentorResourcesPage() {
     });
 
     useEffect(() => {
-        if (activeTab === 'RESOURCES') loadResources();
-        else loadVocabSuggestions();
+        let isMounted = true;
+
+        const fetchData = async () => {
+            if (activeTab === 'RESOURCES') {
+                await loadResources(isMounted);
+            } else {
+                await loadVocabSuggestions(isMounted);
+            }
+        };
+
+        fetchData();
+
+        return () => {
+            isMounted = false;
+        };
     }, [activeTab]);
 
-    const loadResources = async () => {
+    const loadResources = async (isMounted = true) => {
         setIsLoading(true);
         try {
             const data = await mentorService.getMyResources();
-            setResources(data);
+            if (isMounted) setResources(data);
         } catch (error) {
-            toast.error("Lỗi tải tài liệu");
+            if (isMounted) toast.error("Lỗi tải tài liệu");
         } finally {
-            setIsLoading(false);
+            if (isMounted) setIsLoading(false);
         }
     };
 
-    const loadVocabSuggestions = async () => {
+    const loadVocabSuggestions = async (isMounted = true) => {
         setIsLoading(true);
         try {
             const data = await mentorService.getMyVocabSuggestions();
-            setVocabSuggestions(data);
+            if (isMounted) setVocabSuggestions(data);
         } catch (error) {
             console.error(error);
-            toast.error("Lỗi tải từ vựng");
+            if (isMounted) toast.error("Lỗi tải từ vựng");
         } finally {
-            setIsLoading(false);
+            if (isMounted) setIsLoading(false);
         }
     };
 
@@ -260,7 +284,7 @@ export default function MentorResourcesPage() {
                     <div className="flex justify-center items-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#007bff]" /></div>
                 ) : vocabSuggestions.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {vocabSuggestions.map((vocab: any) => (
+                        {vocabSuggestions.map((vocab) => (
                             <div key={vocab.id} className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 relative group">
                                 <h3 className="text-xl font-black text-[#007bff] mb-2">{vocab.vocabulary}</h3>
                                 {vocab.collocations && <p className="text-sm text-gray-600 mb-1"><strong>Collocations:</strong> {vocab.collocations}</p>}

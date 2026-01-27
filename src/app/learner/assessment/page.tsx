@@ -11,28 +11,28 @@ export default function AssessmentPage() {
     const [step, setStep] = useState<'intro' | 'test' | 'result'>('intro');
     const [questions, setQuestions] = useState<Question[]>([]);
     const [currentQIndex, setCurrentQIndex] = useState(0);
-    const [answers, setAnswers] = useState<any>({});
+    const [answers, setAnswers] = useState<Record<number, string>>({});
     const [result, setResult] = useState<AssessmentResult | null>(null);
     const [loading, setLoading] = useState(false);
     const [recording, setRecording] = useState(false);
 
     useEffect(() => {
-        loadQuestions();
+        let isMounted = true;
+        loadQuestions(isMounted);
+        return () => { isMounted = false; };
     }, []);
 
     const [testId, setTestId] = useState<number | null>(null);
 
-    useEffect(() => {
-        loadQuestions();
-    }, []);
-
-    const loadQuestions = async () => {
+    const loadQuestions = async (isMounted = true) => {
         try {
             const data = await proficiencyService.getAssessmentTest();
-            setQuestions(data.questions);
-            setTestId(data.id);
+            if (isMounted) {
+                setQuestions(data.questions);
+                setTestId(data.id);
+            }
         } catch (error) {
-            toast.error("Lỗi tải bài kiểm tra");
+            if (isMounted) toast.error("Lỗi tải bài kiểm tra");
         }
     };
 
@@ -52,23 +52,23 @@ export default function AssessmentPage() {
             // STOP
             setRecording(false);
             // Logic handled in onend or manual stop
-            (window as any).speechRecognitionInstance?.stop();
+            window.speechRecognitionInstance?.stop();
         } else {
             // START
-            const SpeechRecognition = (window as any).webkitSpeechRecognition;
+            const SpeechRecognition = window.webkitSpeechRecognition;
             const recognition = new SpeechRecognition();
             recognition.lang = 'en-US';
             recognition.continuous = false; // Short answer
             recognition.interimResults = false;
 
-            (window as any).speechRecognitionInstance = recognition;
+            window.speechRecognitionInstance = recognition;
 
             recognition.onstart = () => {
                 setRecording(true);
                 toast("Đang lắng nghe...", { icon: '🎙️' });
             };
 
-            recognition.onresult = (event: any) => {
+            recognition.onresult = (event: SpeechRecognitionEvent) => {
                 const text = event.results[0][0].transcript;
                 setAnswers({ ...answers, [currentQIndex]: text });
                 toast.success(`Đã thu âm: "${text}"`);

@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   ArrowRight,
   BookOpen,
@@ -195,10 +196,12 @@ export default function Home() {
                   key={topic.topic_id}
                   className="group relative h-96 rounded-[32px] overflow-hidden cursor-pointer"
                 >
-                  <img
+                  <Image
                     src={topic.image_url || `https://ui-avatars.com/api/?name=${topic.name}&background=random&size=400`}
                     alt={topic.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 33vw"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 

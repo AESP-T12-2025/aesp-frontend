@@ -109,7 +109,7 @@ export default function PracticeRoomPage() {
     setTranscript("");
     transcriptRef.current = "";
 
-    const SpeechRecognition = (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     recognition.lang = 'en-US';
     recognition.continuous = true; // CHANGED TO TRUE FOR LONGER SPEECH
@@ -123,7 +123,7 @@ export default function PracticeRoomPage() {
       toast("Đang lắng nghe...", { icon: '🎙️' });
     };
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       let fullText = "";
       for (let i = 0; i < event.results.length; i++) {
         fullText += event.results[i][0].transcript;

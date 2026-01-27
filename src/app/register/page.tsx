@@ -32,20 +32,30 @@ export default function RegisterPage() {
         toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
         router.push('/login');
       }
-    } catch (error: any) {
-      console.error("Register Error:", error);
-      const status = error.response?.status;
-      const detail = error.response?.data?.detail;
+    } catch (error) {
+      // Type guard for axios error
+      let status: number | undefined;
+      let detail: string | object | undefined;
+
+      if (error && typeof error === 'object') {
+        if ('response' in error) {
+          const axiosError = error as { response?: { status?: number; data?: { detail?: string | Array<{ msg: string }> } }; message?: string };
+          status = axiosError.response?.status;
+          detail = axiosError.response?.data?.detail;
+        }
+        if ('message' in error) {
+          const errorWithMessage = error as { message: string };
+          if (!detail) detail = errorWithMessage.message;
+        }
+      }
 
       let message = "Đăng ký thất bại";
       if (detail) {
-        message = Array.isArray(detail) ? detail[0]?.msg : detail;
+        message = Array.isArray(detail) ? detail[0]?.msg : String(detail);
       } else if (status === 500) {
         message = "Lỗi Server (500). Vui lòng thử lại sau.";
       } else if (status === 409) {
         message = "Email đã tồn tại";
-      } else {
-        message = error.message || "Lỗi kết nối";
       }
 
       toast.error(`Lỗi (${status || '?'}) : ${message}`);

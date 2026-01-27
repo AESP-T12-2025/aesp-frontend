@@ -47,6 +47,21 @@ export interface AvailabilitySlot {
     is_booked: boolean;
 }
 
+export interface ReviewSubmit {
+    mentor_id: number;
+    booking_id: number;
+    rating: number;
+    comment?: string;
+}
+
+export interface VocabSuggestionCreate {
+    topic_id?: number;
+    vocabulary: string;
+    collocations?: string;
+    idioms?: string;
+    tips?: string;
+}
+
 export const mentorService = {
     // Profile
     createOrUpdateProfile: async (data: MentorProfile) => {
@@ -111,7 +126,7 @@ export const mentorService = {
         const res = await api.get('/reviews/me');
         return res.data;
     },
-    submitReview: async (data: any) => {
+    submitReview: async (data: ReviewSubmit) => {
         const res = await api.post('/reviews/submit', data);
         return res.data;
     },
@@ -131,7 +146,7 @@ export const mentorService = {
     },
 
     // Vocab Suggestions
-    createVocabSuggestion: async (data: any) => {
+    createVocabSuggestion: async (data: VocabSuggestionCreate) => {
         const res = await api.post('/mentor/vocab-suggestions', data);
         return res.data;
     },

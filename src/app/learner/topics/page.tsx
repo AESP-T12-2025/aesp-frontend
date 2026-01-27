@@ -5,6 +5,7 @@ import { topicService, Topic } from '@/services/topicService';
 import { imageService } from '@/services/imageService';
 import { Search, BookOpen, ArrowRight, Star, Lock, Briefcase, Plane, Heart, GraduationCap } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 
 export default function TopicsPage() {
@@ -109,11 +110,12 @@ export default function TopicsPage() {
                                     {/* Image Area */}
                                     <div className="h-56 relative overflow-hidden bg-gradient-to-br from-blue-400 to-purple-500">
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
-                                        <img
+                                        <Image
                                             src={topic.image_url || getImageUrl(topic.name, topic.topic_id)}
                                             alt={topic.name}
-                                            className="w-full h-full object-cover transform group-hover:scale-110 transition duration-700"
-                                            loading="lazy"
+                                            fill
+                                            className="object-cover transform group-hover:scale-110 transition duration-700"
+                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                         />
                                         <div className="absolute top-4 right-4 z-20">
                                             {index < 3 ? (

@@ -14,7 +14,7 @@ export interface AssessmentResult {
 }
 
 export const proficiencyService = {
-    submitTest: async (testId: number, answers: any, speakingText?: string) => {
+    submitTest: async (testId: number, answers: Record<number, string>, speakingText?: string) => {
         const res = await api.post('/proficiency/submit', {
             test_id: testId,
             answers,

@@ -1,32 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, Image as ImageIcon, Loader2, RefreshCw, Trash2, Edit } from "lucide-react";
 // Use service instead of direct api call
 import { topicService, Topic } from "@/services/topicService";
 import Link from "next/link";
+import NextImage from "next/image";
 import toast from "react-hot-toast";
 
 export default function TopicsPage() {
     const [topics, setTopics] = useState<Topic[]>([]);
     const [loading, setLoading] = useState(true);
+    const isMounted = useRef(false);
 
-    // Fetch data
     const fetchTopics = async () => {
         setLoading(true);
         try {
             const data = await topicService.getAll();
-            setTopics(data);
+            if (isMounted.current) setTopics(data);
         } catch (err) {
             console.error(err);
-            toast.error("Không thể tải danh sách chủ đề");
+            if (isMounted.current) toast.error("Không thể tải danh sách chủ đề");
         } finally {
-            setLoading(false);
+            if (isMounted.current) setLoading(false);
         }
     };
 
     useEffect(() => {
+        isMounted.current = true;
         fetchTopics();
+        return () => { isMounted.current = false; };
     }, []);
 
     // Handle Delete
@@ -48,7 +51,7 @@ export default function TopicsPage() {
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">Quản Lý Chủ Đề</h2>
                 <div className="flex space-x-2">
-                    <button onClick={fetchTopics} className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center shadow-sm transition-all">
+                    <button onClick={() => window.location.reload()} className="bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center shadow-sm transition-all">
                         <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                         Làm mới
                     </button>
@@ -83,7 +86,13 @@ export default function TopicsPage() {
                             <div key={topic.topic_id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden border border-gray-100 group">
                                 <div className="h-48 bg-gray-100 relative overflow-hidden">
                                     {topic.image_url ? (
-                                        <img src={topic.image_url} alt={topic.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                        <NextImage
+                                            src={topic.image_url}
+                                            alt={topic.name}
+                                            fill
+                                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                            sizes="(max-width: 768px) 100vw, 33vw"
+                                        />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center bg-gray-50">
                                             <ImageIcon className="w-12 h-12 text-gray-300" />
@@ -120,7 +129,7 @@ export default function TopicsPage() {
     );
 }
 
-function BookOpen(props: any) {
+function BookOpen(props: React.SVGProps<SVGSVGElement>) {
     return (
         <svg
             {...props}

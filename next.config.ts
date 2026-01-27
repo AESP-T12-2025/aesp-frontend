@@ -4,7 +4,24 @@ const nextConfig: NextConfig = {
   /* config options here */
   // reactCompiler: true, // Commenting out to avoid potential build issues if not needed yet
   images: {
-    domains: ['aesp-backend.onrender.com'], // Allow images from backend
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'aesp-backend.onrender.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ui-avatars.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'picsum.photos',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      }
+    ],
   },
   async rewrites() {
     // Only proxy in development mode

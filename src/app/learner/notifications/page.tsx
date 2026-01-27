@@ -10,20 +10,27 @@ export default function NotificationsPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        loadNotifications();
+        let isMounted = true;
+        loadNotifications(isMounted);
+        return () => { isMounted = false; };
     }, []);
 
-    const loadNotifications = async () => {
+    const loadNotifications = async (isMounted = true) => {
         try {
             const data = await notificationService.getAll();
-            setNotifications(data);
-        } catch (error: any) {
+            if (isMounted) setNotifications(data);
+        } catch (error) {
             // Gracefully handle 401 - user will be logged out by AuthContext anyway
-            if (error?.response?.status !== 401) {
+            if (error && typeof error === 'object' && 'response' in error) {
+                const axiosError = error as { response?: { status: number } };
+                if (axiosError.response?.status !== 401) {
+                    console.error("Failed to load notifications:", error);
+                }
+            } else {
                 console.error("Failed to load notifications:", error);
             }
         } finally {
-            setLoading(false);
+            if (isMounted) setLoading(false);
         }
     };
 

@@ -5,6 +5,7 @@ import { ArrowRight, Trophy, Map, Crown, Zap, Target, Flame } from 'lucide-react
 import { useAuth } from '@/context/AuthContext';
 import { proficiencyService } from '@/services/proficiencyService';
 import { useState, useEffect } from 'react';
+import type { LearningPath } from '@/types';
 
 export default function LearnerDashboard() {
   const { user } = useAuth();
@@ -16,7 +17,7 @@ export default function LearnerDashboard() {
     streak: 0
   });
 
-  const [currentPath, setCurrentPath] = useState<any>(null);
+  const [currentPath, setCurrentPath] = useState<LearningPath | null>(null);
 
   useEffect(() => {
     loadData();
@@ -39,8 +40,8 @@ export default function LearnerDashboard() {
         rank: getRank(statsData.xp || 0),
         streak: statsData.streak || 0
       });
-    } catch (e) {
-      console.log("Failed to load dashboard data");
+    } catch {
+      // Failed to load dashboard data - user may not have completed assessment yet
     }
   };
 

@@ -50,7 +50,7 @@ export const scenarioService = {
   },
 
   getVocab: async (id: number | string) => {
-    const response = await api.get<{ vocabulary: any }>(`/scenarios/${id}/vocab`);
+    const response = await api.get<{ vocabulary: string[] }>(`/scenarios/${id}/vocab`);
     return response.data;
   }
 };

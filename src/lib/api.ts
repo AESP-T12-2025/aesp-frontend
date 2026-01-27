@@ -10,7 +10,10 @@ const api = axios.create({
     },
 });
 
-console.log("Current API URL:", API_URL); // Debug log
+// Debug logging only in development
+if (process.env.NODE_ENV === 'development') {
+    // console.log("Current API URL:", API_URL);
+}
 
 // Add interceptor to include token if available (Week 1 placeholder)
 api.interceptors.request.use((config) => {
