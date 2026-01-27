@@ -20,24 +20,28 @@ export default function MentorTipsPage() {
     const [posting, setPosting] = useState(false);
 
     useEffect(() => {
-        loadTips();
+        let isMounted = true;
+        loadTips(isMounted);
+        return () => { isMounted = false; };
     }, []);
 
-    const loadTips = async () => {
+    const loadTips = async (isMounted = true) => {
         try {
             const data = await socialService.getFeed();
             // Filter tips (posts that start with "[TIP]" or contain experience keywords)
-            const filteredTips = data.filter((p: any) =>
-                p.content?.toLowerCase().includes('[tip]') ||
-                p.content?.toLowerCase().includes('kinh nghiệm') ||
-                p.content?.toLowerCase().includes('tips') ||
-                p.content?.toLowerCase().includes('mẹo')
-            );
-            setTips(filteredTips);
+            if (isMounted) {
+                const filteredTips = data.filter((p: { content?: string }) =>
+                    p.content?.toLowerCase().includes('[tip]') ||
+                    p.content?.toLowerCase().includes('kinh nghiệm') ||
+                    p.content?.toLowerCase().includes('tips') ||
+                    p.content?.toLowerCase().includes('mẹo')
+                );
+                setTips(filteredTips);
+            }
         } catch (e) {
             console.error(e);
         } finally {
-            setLoading(false);
+            if (isMounted) setLoading(false);
         }
     };
 

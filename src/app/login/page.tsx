@@ -39,9 +39,17 @@ export default function LoginPage() {
         await login(token);
         // The useEffect above will handle redirection once 'user' state is updated
       }
-    } catch (error: any) {
-      const detail = error.response?.data?.detail;
-      toast.error(typeof detail === 'string' ? detail : "Sai tài khoản hoặc mật khẩu");
+    } catch (error) {
+      // Type guard for axios error
+      let detail = "Sai tài khoản hoặc mật khẩu";
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { detail?: string | object } } };
+        const errorDetail = axiosError.response?.data?.detail;
+        if (typeof errorDetail === 'string') {
+          detail = errorDetail;
+        }
+      }
+      toast.error(detail);
     } finally {
       setIsLoading(false);
     }

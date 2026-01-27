@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { User, Edit, Trash2, Loader2, RefreshCw } from "lucide-react";
 import api, { User as UserType } from "@/lib/api";
 
@@ -8,28 +8,32 @@ export default function UsersPage() {
     const [users, setUsers] = useState<UserType[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const isMounted = useRef(false);
+
+    useEffect(() => {
+        isMounted.current = true;
+        fetchUsers();
+        return () => { isMounted.current = false; };
+    }, []);
 
     const fetchUsers = async () => {
         setLoading(true);
         setError("");
         try {
             const response = await api.get("/users");
-            setUsers(response.data);
-        } catch (err: any) {
+            if (isMounted.current) setUsers(response.data);
+        } catch (err) {
             console.error("Fetch users error:", err);
-            setError(
-                err.response?.data?.detail ||
-                err.message ||
-                "Failed to fetch users. Check console for details."
-            );
+            let errorMessage = "Failed to fetch users. Check console for details.";
+            if (err && typeof err === 'object' && 'response' in err) {
+                const axiosError = err as { response?: { data?: { detail?: string } }, message?: string };
+                errorMessage = axiosError.response?.data?.detail || axiosError.message || errorMessage;
+            }
+            if (isMounted.current) setError(errorMessage);
         } finally {
-            setLoading(false);
+            if (isMounted.current) setLoading(false);
         }
     };
-
-    useEffect(() => {
-        fetchUsers();
-    }, []);
 
     return (
         <div>

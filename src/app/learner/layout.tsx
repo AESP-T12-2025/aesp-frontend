@@ -10,22 +10,40 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
   const { user, logout } = useAuth(); // Use Auth context
   const [unreadCount, setUnreadCount] = React.useState(0);
 
+  interface Notification {
+    id: number;
+    message: string;
+    is_read: boolean;
+  }
+
   React.useEffect(() => {
+    let isMounted = true;
+
     // Poll for notifications or fetch once
     const fetchNotis = async () => {
       try {
         const { notificationService } = await import('@/services/notificationService');
-        const notis = await notificationService.getAll();
-        setUnreadCount(notis.filter((n: any) => !n.is_read).length);
-      } catch (e: any) {
-        if (e.response && e.response.status === 401) {
-          // Silently ignore 401s here, AuthContext handles globally or we let it slide
-        } else {
-          console.error(e);
+        const notis = await notificationService.getAll() as Notification[];
+        if (isMounted) {
+          setUnreadCount(notis.filter((n) => !n.is_read).length);
         }
+      } catch (error) {
+        // Type guard for axios error
+        if (error && typeof error === 'object' && 'response' in error) {
+          const axiosError = error as { response?: { status: number } };
+          if (axiosError.response?.status === 401) {
+            // Silently ignore 401s here
+            return;
+          }
+        }
+        console.error("Error fetching notifications:", error);
       }
     };
     if (user) fetchNotis();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user, pathname]); // Re-fetch on nav change is a simple way to keep fresh
 
   const menuItems = [

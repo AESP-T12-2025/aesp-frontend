@@ -5,13 +5,40 @@ import { BarChart as BarChartIcon, Calendar, TrendingUp, Clock, CheckCircle, XCi
 import { analyticsService } from '@/services/analyticsService';
 import Link from 'next/link';
 
+interface FeedbackItem {
+    type: 'strength' | 'weakness';
+    text: string;
+}
+
+interface HeatMapDay {
+    date: string;
+    level: number;
+}
+
+interface AnalyticsStats {
+    totalHours: number;
+    scenariosCompleted: number;
+    avgScore: number;
+    streak: number;
+    xpEarned: number;
+    dailyActivity: number[];
+    feedback: FeedbackItem[];
+    heatMap: HeatMapDay[];
+    comparison?: {
+        prevMonthHours: number;
+        diff: number;
+    };
+}
+
 export default function ReportsPage() {
-    const [stats, setStats] = useState<any>(null);
+    const [stats, setStats] = useState<AnalyticsStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'WEEKLY' | 'MONTHLY'>('WEEKLY');
     const [currentDate, setCurrentDate] = useState(new Date());
 
     useEffect(() => {
+        let isMounted = true;
+
         const load = async () => {
             setLoading(true);
             try {
@@ -25,14 +52,22 @@ export default function ReportsPage() {
                 } else {
                     data = await analyticsService.getMonthlyStats(monthStr);
                 }
-                setStats(data);
+                if (isMounted) {
+                    setStats(data);
+                }
             } catch (e) {
                 console.error(e);
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
         load();
+
+        return () => {
+            isMounted = false;
+        };
     }, [currentDate, viewMode]);
 
     const handlePrev = () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, MessageSquare, Loader2, RefreshCw, Trash2, Edit } from "lucide-react";
 import { scenarioService, Scenario } from "@/services/scenarioService";
 import Link from 'next/link';
@@ -9,22 +9,25 @@ import toast from "react-hot-toast";
 export default function ScenariosPage() {
     const [scenarios, setScenarios] = useState<Scenario[]>([]);
     const [loading, setLoading] = useState(true);
+    const isMounted = useRef(false);
 
     const fetchScenarios = async () => {
         setLoading(true);
         try {
             const data = await scenarioService.getAll();
-            setScenarios(data);
+            if (isMounted.current) setScenarios(data);
         } catch (err) {
             console.error(err);
-            toast.error("Không thể tải danh sách kịch bản");
+            if (isMounted.current) toast.error("Không thể tải danh sách kịch bản");
         } finally {
-            setLoading(false);
+            if (isMounted.current) setLoading(false);
         }
     };
 
     useEffect(() => {
+        isMounted.current = true;
         fetchScenarios();
+        return () => { isMounted.current = false; };
     }, []);
 
     const handleDelete = async (id: number) => {

@@ -33,25 +33,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             const response = await api.get("/users/me");
             setUser(response.data);
-        } catch (error: any) {
-            if (error.response && error.response.status === 401) {
-                // Token expired or invalid, fail silently and logout
-                logout();
-            } else {
-                console.error("Failed to fetch user profile", error);
+        } catch (error) {
+            // Type guard for axios error
+            if (error && typeof error === 'object' && 'response' in error) {
+                const axiosError = error as { response?: { status: number } };
+                if (axiosError.response?.status === 401) {
+                    // Token expired or invalid, fail silently and logout
+                    logout();
+                    return;
+                }
             }
+            console.error("Failed to fetch user profile", error);
         }
     };
 
     useEffect(() => {
+        let isMounted = true;
+
         const initAuth = async () => {
             const token = localStorage.getItem("token");
-            if (token) {
+            if (token && isMounted) {
                 await fetchUserProfile();
             }
-            setIsLoading(false);
+            if (isMounted) {
+                setIsLoading(false);
+            }
         };
         initAuth();
+
+        // Cleanup to prevent state updates on unmounted component
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     const login = async (token: string) => {

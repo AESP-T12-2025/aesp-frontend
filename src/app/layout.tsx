@@ -11,8 +11,20 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "AESP - AI English Speaking Platform",
-  description: "Improve your English speaking skills with AI",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  title: {
+    template: '%s | AESP',
+    default: 'AESP - Nền tảng luyện nói tiếng Anh số 1 Việt Nam',
+  },
+  description: "Luyện nói tiếng Anh tự tin với AI & Mentor. Phản hồi tức thì, lộ trình cá nhân hóa.",
+  keywords: ["tiếng anh", "luyện nói", "AI", "mentor", "english speaking", "ielts", "toeic"],
+  openGraph: {
+    title: 'AESP - AI English Speaking Platform',
+    description: 'Nền tảng luyện nói tiếng Anh số 1 Việt Nam với công nghệ AI tiên tiến.',
+    siteName: 'AESP',
+    locale: 'vi_VN',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({

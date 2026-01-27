@@ -10,22 +10,22 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Sau này sẽ gọi API Flask ở đây
-    console.log("Yêu cầu khôi phục cho:", email);
+    // TODO: Implement password reset API call
+    // await authService.requestPasswordReset(email);
     setIsSent(true);
   };
 
   return (
     <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-gray-100 text-gray-900">
-        
+
         {/* Nút quay lại */}
         <Link href="/login" className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 font-semibold mb-6 transition-colors">
           <ArrowLeft size={16} className="mr-1" /> Quay lại đăng nhập
         </Link>
 
         <h2 className="text-3xl font-bold text-center text-blue-700 mb-4">Quên mật khẩu?</h2>
-        
+
         {!isSent ? (
           <>
             <p className="text-gray-600 text-center mb-8 font-medium">
@@ -36,9 +36,9 @@ export default function ForgotPasswordPage() {
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Email của bạn</label>
                 <div className="relative">
-                  <input 
-                    type="email" 
-                    required 
+                  <input
+                    type="email"
+                    required
                     className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 font-bold bg-white placeholder:text-gray-400"
                     placeholder="example@gmail.com"
                     onChange={(e) => setEmail(e.target.value)}
@@ -47,8 +47,8 @@ export default function ForgotPasswordPage() {
                 </div>
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-lg transition duration-300 transform hover:-translate-y-1 active:scale-95"
               >
                 Gửi yêu cầu khôi phục

@@ -13,20 +13,22 @@ export default function PackagesPage() {
     const router = useRouter();
 
     useEffect(() => {
-        loadPackages();
+        let isMounted = true;
+        loadPackages(isMounted);
+        return () => { isMounted = false; };
     }, [filter]);
 
-    const loadPackages = async () => {
-        setLoading(true); // Show loading when switching
+    const loadPackages = async (isMounted = true) => {
+        if (isMounted) setLoading(true); // Show loading when switching
         try {
             const data = await paymentService.getPackages(filter === null ? undefined : filter);
-            setPackages(data);
+            if (isMounted) setPackages(data);
         } catch (error) {
             console.error("Failed to load packages", error);
             // Fallback for demo if DB is empty
-            setPackages([]);
+            if (isMounted) setPackages([]);
         } finally {
-            setLoading(false);
+            if (isMounted) setLoading(false);
         }
     };
 
