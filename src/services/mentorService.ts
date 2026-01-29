@@ -1,11 +1,15 @@
 import api from '@/lib/api';
 
+// === Interfaces ===
+
 export interface Resource {
     resource_id?: number;
     title: string;
     description?: string;
     file_url: string;
-    resource_type: 'DOCUMENT' | 'VIDEO' | 'AUDIO' | 'LINK';
+    resource_type: 'DOCUMENT' | 'VIDEO' | 'LINK' | 'AUDIO' | 'document' | 'video' | 'link';
+    is_public?: boolean;
+    file_size?: number;
 }
 
 export interface Session {
@@ -39,12 +43,29 @@ export interface MentorProfile {
     verification_status?: 'PENDING' | 'VERIFIED' | 'REJECTED';
 }
 
+export interface AvailabilitySlotInput {
+    day: string;
+    start_time: string;
+    end_time: string;
+}
+
 export interface AvailabilitySlot {
     slot_id: number;
     mentor_id: number;
+    day_of_week: string;
     start_time: string;
     end_time: string;
-    is_booked: boolean;
+}
+
+export interface Booking {
+    booking_id: number;
+    mentor_id: number;
+    learner_id: number;
+    date: string;
+    time: string;
+    status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+    mentor_name?: string;
+    learner_name?: string;
 }
 
 export interface ReviewSubmit {
@@ -63,109 +84,180 @@ export interface VocabSuggestionCreate {
 }
 
 export const mentorService = {
-    // Profile
+    // === Profile ===
     createOrUpdateProfile: async (data: MentorProfile) => {
         const res = await api.post('/mentors/profile', data);
         return res.data;
     },
 
-    // Mentors
     getAllMentors: async () => {
         const res = await api.get('/mentors');
         return res.data;
     },
+
+    // === Issue #30: Availability System (FIXED URLs) ===
+    setAvailability: async (slots: AvailabilitySlotInput[]): Promise<AvailabilitySlot[]> => {
+        const res = await api.post('/mentors/availability', { slots });
+        return res.data;
+    },
+
+    getMyAvailability: async (): Promise<AvailabilitySlot[]> => {
+        const res = await api.get('/mentors/availability');
+        return res.data;
+    },
+
     getSlotsByMentor: async (mentorId: number) => {
         const res = await api.get(`/mentors/${mentorId}/slots`);
         return res.data;
     },
-    createSlot: async (data: { start_time: string, end_time: string }) => {
+
+    createSlot: async (data: { start_time: string; end_time: string }) => {
         const res = await api.post('/mentors/slots', data);
         return res.data;
     },
 
-    // Bookings
+    // === Issue #30: Booking System (NEW) ===
+    getMentorBookings: async (): Promise<Booking[]> => {
+        const res = await api.get('/mentors/bookings');
+        return res.data;
+    },
+
+    bookMentor: async (mentorId: number, date: string, time: string) => {
+        const res = await api.post(`/mentors/${mentorId}/book`, { date, time });
+        return res.data;
+    },
+
+    acceptBooking: async (bookingId: number) => {
+        const res = await api.post(`/mentors/bookings/${bookingId}/accept`);
+        return res.data;
+    },
+
+    rejectBooking: async (bookingId: number, reason?: string) => {
+        const res = await api.post(`/mentors/bookings/${bookingId}/reject`, { reason });
+        return res.data;
+    },
+
+    // === Learner Booking Endpoints ===
+    getLearnerBookings: async (): Promise<Booking[]> => {
+        const res = await api.get('/learners/bookings');
+        return res.data;
+    },
+
+    cancelLearnerBooking: async (bookingId: number) => {
+        const res = await api.post(`/learners/bookings/${bookingId}/cancel`);
+        return res.data;
+    },
+
+    // Legacy booking methods (kept for compatibility)
     createBooking: async (slotId: number) => {
         const res = await api.post('/bookings/create', { slot_id: slotId });
         return res.data;
     },
+
     getMyBookings: async () => {
-        const res = await api.get('/mentors/me/bookings');
+        const res = await api.get('/mentors/bookings');
         return res.data;
     },
 
-    // Sessions
+    // === Sessions ===
     getMySessions: async (): Promise<Session[]> => {
         const res = await api.get('/mentor-review/sessions');
         return res.data;
     },
+
     startSession: async (bookingId: number) => {
-        const res = await api.post(`/mentor-review/sessions/start`, { booking_id: bookingId });
+        const res = await api.post('/mentor-review/sessions/start', { booking_id: bookingId });
         return res.data;
     },
+
     endSession: async (sessionId: number, notes?: string) => {
         const res = await api.post(`/mentor-review/sessions/${sessionId}/end`, { notes });
         return res.data;
     },
+
     updateSessionNotes: async (sessionId: number, notes: string) => {
         const res = await api.put(`/mentor-review/sessions/${sessionId}/notes`, { notes });
         return res.data;
     },
 
-    // Session Assessments (from History page)
+    // === Session Assessments ===
     getSessionAssessment: async (sessionId: number): Promise<Assessment> => {
         const res = await api.get(`/mentor-review/sessions/${sessionId}/assessment`);
         return res.data;
     },
+
     createSessionAssessment: async (data: Omit<Assessment, 'assessment_id'>): Promise<Assessment> => {
-        const res = await api.post(`/mentor-review/assessments`, data);
+        const res = await api.post('/mentor-review/assessments', data);
         return res.data;
     },
 
-    // Reviews
+    // === Reviews ===
     getMyReviews: async () => {
         const res = await api.get('/reviews/me');
         return res.data;
     },
+
     submitReview: async (data: ReviewSubmit) => {
         const res = await api.post('/reviews/submit', data);
         return res.data;
     },
 
-    // Resources
-    getMyResources: async () => {
-        const res = await api.get('/mentor-review/resources');
+    // === Issue #37: Resources (FIXED URLs) ===
+    getMyResources: async (): Promise<Resource[]> => {
+        const res = await api.get('/mentor/resources');
         return res.data;
     },
+
+    getResourceById: async (id: number): Promise<Resource> => {
+        const res = await api.get(`/mentor/resources/${id}`);
+        return res.data;
+    },
+
     createResource: async (data: Omit<Resource, 'resource_id'>) => {
-        const res = await api.post('/mentor-review/resources', data);
+        const res = await api.post('/mentor/resources', data);
         return res.data;
     },
+
+    updateResource: async (id: number, data: Partial<Resource>) => {
+        const res = await api.put(`/mentor/resources/${id}`, data);
+        return res.data;
+    },
+
     deleteResource: async (id: number) => {
         const res = await api.delete(`/mentor/resources/${id}`);
         return res.data;
     },
 
-    // Vocab Suggestions
+    getPublicResources: async (resourceType?: string): Promise<Resource[]> => {
+        const res = await api.get('/resources/public', {
+            params: { resource_type: resourceType }
+        });
+        return res.data;
+    },
+
+    // === Vocab Suggestions ===
     createVocabSuggestion: async (data: VocabSuggestionCreate) => {
         const res = await api.post('/mentor/vocab-suggestions', data);
         return res.data;
     },
+
     getMyVocabSuggestions: async () => {
         const res = await api.get('/mentor/vocab-suggestions');
         return res.data;
     },
 
-    // Simple Assessments (from Assessments page - after booking)
+    // === Simple Assessments ===
     createAssessment: async (data: { booking_id: number; score: number; feedback: string; level_assigned?: string }) => {
         const res = await api.post('/mentor/assessments', data);
         return res.data;
     },
+
     getMyAssessments: async () => {
         const res = await api.get('/mentor/assessments');
         return res.data;
     },
 
-    // Admin Helpers
+    // === Admin Helpers ===
     verifyMentor: async (id: number, status: string = 'VERIFIED') => {
         const res = await api.put(`/admin/mentors/${id}/verify`, null, { params: { status } });
         return res.data;
