@@ -1,12 +1,12 @@
 import api from '@/lib/api';
 
 export interface SupportTicket {
-    id: number;
+    ticket_id: number;
     user_id: number;
-    user_email: string;
-    subject: string;
-    content: string;
-    status: 'OPEN' | 'RESOLVED' | 'CLOSED';
+    title: string;
+    description: string;
+    status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+    priority: 'LOW' | 'MEDIUM' | 'HIGH';
     created_at: string;
 }
 
@@ -34,14 +34,21 @@ export const adminService = {
         return res.data;
     },
 
-    // Support Tickets
-    getAllTickets: async (): Promise<SupportTicket[]> => {
-        const res = await api.get('/support/admin/tickets');
+    // Support Tickets - Issue #33 (FIXED URLs)
+    getAllTickets: async (status?: string, priority?: string): Promise<SupportTicket[]> => {
+        const res = await api.get('/admin/support/tickets', {
+            params: { status, priority }
+        });
         return res.data;
     },
 
-    resolveTicket: async (ticketId: number, status: string) => {
-        const res = await api.put(`/support/tickets/${ticketId}/resolve`, { status });
+    getTicketById: async (ticketId: number): Promise<SupportTicket> => {
+        const res = await api.get(`/admin/support/tickets/${ticketId}`);
+        return res.data;
+    },
+
+    updateTicket: async (ticketId: number, data: { status?: string; priority?: string }) => {
+        const res = await api.patch(`/admin/support/tickets/${ticketId}`, data);
         return res.data;
     },
 

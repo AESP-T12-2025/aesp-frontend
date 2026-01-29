@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import type { LearningPath } from '@/types';
 
 export interface Question {
     id: number;
@@ -22,12 +23,21 @@ export const proficiencyService = {
         });
         return res.data;
     },
+
     getAssessmentTest: async () => {
         const res = await api.get('/proficiency/test');
         return res.data;
     },
-    getMyPath: async () => {
-        const res = await api.get('/proficiency/my-path');
+
+    // Issue #27: Personalized Learning Path (FIXED URL)
+    getPersonalizedPath: async (): Promise<LearningPath> => {
+        const res = await api.get('/proficiency/path');
+        return res.data;
+    },
+
+    // Alias for backward compatibility
+    getMyPath: async (): Promise<LearningPath> => {
+        const res = await api.get('/proficiency/path');
         return res.data;
     }
 };
