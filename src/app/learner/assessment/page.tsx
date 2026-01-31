@@ -14,7 +14,7 @@ export default function AssessmentPage() {
     const [answers, setAnswers] = useState<Record<number, string>>({});
     const [result, setResult] = useState<AssessmentResult | null>(null);
     const [loading, setLoading] = useState(false);
-    const [recording, setRecording] = useState(false);
+    // const [recording, setRecording] = useState(false); // Removed
 
     useEffect(() => {
         let isMounted = true;
@@ -39,54 +39,11 @@ export default function AssessmentPage() {
     const handleStart = () => setStep('test');
 
     const handleOptionSelect = (option: string) => {
-        setAnswers({ ...answers, [currentQIndex]: option });
+        const currentQ = questions[currentQIndex];
+        setAnswers({ ...answers, [currentQ.id]: option });
     };
 
-    const handleRecordToggle = () => {
-        if (!('webkitSpeechRecognition' in window)) {
-            toast.error("Trình duyệt không hỗ trợ Web Speech API");
-            return;
-        }
-
-        if (recording) {
-            // STOP
-            setRecording(false);
-            // Logic handled in onend or manual stop
-            window.speechRecognitionInstance?.stop();
-        } else {
-            // START
-            const SpeechRecognition = window.webkitSpeechRecognition;
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'en-US';
-            recognition.continuous = false; // Short answer
-            recognition.interimResults = false;
-
-            window.speechRecognitionInstance = recognition;
-
-            recognition.onstart = () => {
-                setRecording(true);
-                toast("Đang lắng nghe...", { icon: '🎙️' });
-            };
-
-            recognition.onresult = (event: SpeechRecognitionEvent) => {
-                const text = event.results[0][0].transcript;
-                setAnswers({ ...answers, [currentQIndex]: text });
-                toast.success(`Đã thu âm: "${text}"`);
-            };
-
-            recognition.onerror = (event: any) => {
-                console.error(event.error);
-                setRecording(false);
-                toast.error("Lỗi thu âm");
-            };
-
-            recognition.onend = () => {
-                setRecording(false);
-            };
-
-            recognition.start();
-        }
-    };
+    // handleRecordToggle removed for grammar-only test
 
     const handleNext = async () => {
         if (currentQIndex < questions.length - 1) {
@@ -95,12 +52,7 @@ export default function AssessmentPage() {
             // Submit
             setLoading(true);
             try {
-                // Find speaking text if any
-                // Assuming last question is speaking or type='pronunciation'
-                const speakingQIndex = questions.findIndex(q => q.type === 'pronunciation');
-                const speakingText = speakingQIndex >= 0 ? answers[speakingQIndex] : undefined;
-
-                const res = await proficiencyService.submitTest(testId!, answers, speakingText);
+                const res = await proficiencyService.submitTest(testId!, answers, undefined);
                 setResult(res);
                 setStep('result');
                 toast.success("Đã có kết quả!");
@@ -126,11 +78,7 @@ export default function AssessmentPage() {
                         <p className="text-gray-500 mb-8 text-lg">
                             Bài test ngắn giúp AI xác định trình độ hiện tại của bạn để thiết kế lộ trình học cá nhân hóa phù hợp nhất.
                         </p>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-left">
-                            <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                                <span className="font-bold text-gray-900 block mb-1">👂 Nghe & Nói</span>
-                                <span className="text-sm text-gray-500">Kiểm tra phát âm</span>
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 text-left">
                             <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                                 <span className="font-bold text-gray-900 block mb-1">📚 Ngữ pháp</span>
                                 <span className="text-sm text-gray-500">Cấu trúc câu</span>
@@ -177,49 +125,28 @@ export default function AssessmentPage() {
 
                             {/* Answer Area */}
                             <div className="mb-8">
-                                {questions[currentQIndex].type === 'grammar' || questions[currentQIndex].type === 'vocabulary' ? (
-                                    <div className="grid grid-cols-1 gap-3">
-                                        {questions[currentQIndex].options?.map((opt, idx) => (
+                                <div className="grid grid-cols-1 gap-3">
+                                    {questions[currentQIndex].options?.map((opt, idx) => {
+                                        const currentQId = questions[currentQIndex].id;
+                                        return (
                                             <button
                                                 key={idx}
                                                 onClick={() => handleOptionSelect(opt)}
-                                                className={`p-4 rounded-xl border-2 text-left font-medium transition-all ${answers[currentQIndex] === opt
+                                                className={`p-4 rounded-xl border-2 text-left font-medium transition-all ${answers[currentQId] === opt
                                                     ? 'border-[#007bff] bg-blue-50 text-[#007bff]'
                                                     : 'border-gray-100 hover:border-blue-200'
                                                     }`}
                                             >
                                                 {opt}
                                             </button>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center py-8">
-                                        <button
-                                            onClick={handleRecordToggle}
-                                            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all ${recording
-                                                ? 'bg-red-500 animate-pulse ring-4 ring-red-200'
-                                                : answers[currentQIndex]
-                                                    ? 'bg-green-500 ring-4 ring-green-200'
-                                                    : 'bg-[#007bff] hover:scale-105'
-                                                }`}
-                                        >
-                                            {recording ? <div className="w-8 h-8 bg-white rounded-md" /> : <Mic size={32} className="text-white" />}
-                                        </button>
-                                        <p className="mt-4 text-gray-500 font-medium">
-                                            {recording ? "Đang thu âm..." : answers[currentQIndex] ? `Đã trả lời: "${answers[currentQIndex]}"` : "Chạm để nói"}
-                                        </p>
-                                        {answers[currentQIndex] && (
-                                            <button onClick={() => setAnswers({ ...answers, [currentQIndex]: "" })} className="mt-2 text-xs text-red-500 font-bold hover:underline">
-                                                Thu âm lại
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
+                                        );
+                                    })}
+                                </div>
                             </div>
 
                             <button
                                 onClick={handleNext}
-                                disabled={!answers[currentQIndex]}
+                                disabled={!answers[questions[currentQIndex]?.id]}
                                 className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition-all flex items-center justify-center gap-2"
                             >
                                 {loading ? <Loader2 className="animate-spin" /> : (
