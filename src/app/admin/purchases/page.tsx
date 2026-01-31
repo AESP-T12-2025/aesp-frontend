@@ -27,8 +27,11 @@ export default function AdminPurchasesPage() {
     const loadTransactions = async () => {
         try {
             const data = await adminService.getAllTransactions();
-            setTransactions(data);
+            // Handle paginated response: { items: [...], total, page, ... }
+            const items = Array.isArray(data) ? data : (data?.items || data?.transactions || []);
+            setTransactions(items);
         } catch (e) {
+            console.error(e);
             toast.error("Lỗi tải lịch sử giao dịch");
         } finally {
             setLoading(false);

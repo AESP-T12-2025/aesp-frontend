@@ -14,7 +14,18 @@ export interface AssessmentResult {
     feedback: string;
 }
 
+export interface TestHistory {
+    id: number;
+    test_id: number;
+    score: number;
+    assessed_level: string;
+    created_at: string;
+}
+
 export const proficiencyService = {
+    /**
+     * Submit proficiency test answers
+     */
     submitTest: async (testId: number, answers: Record<number, string>, speakingText?: string) => {
         const res = await api.post('/proficiency/submit', {
             test_id: testId,
@@ -24,20 +35,35 @@ export const proficiencyService = {
         return res.data;
     },
 
+    /**
+     * Get proficiency assessment test questions
+     */
     getAssessmentTest: async () => {
         const res = await api.get('/proficiency/test');
         return res.data;
     },
 
-    // Issue #27: Personalized Learning Path (FIXED URL)
+    /**
+     * Get personalized learning path (Issue #27)
+     */
     getPersonalizedPath: async (): Promise<LearningPath> => {
         const res = await api.get('/proficiency/path');
         return res.data;
     },
 
-    // Alias for backward compatibility
+    /**
+     * Get user's current learning path
+     */
     getMyPath: async (): Promise<LearningPath> => {
-        const res = await api.get('/proficiency/path');
+        const res = await api.get('/proficiency/my-path');
+        return res.data;
+    },
+
+    /**
+     * Get proficiency test history
+     */
+    getProficiencyHistory: async (): Promise<TestHistory[]> => {
+        const res = await api.get('/proficiency/history');
         return res.data;
     }
 };

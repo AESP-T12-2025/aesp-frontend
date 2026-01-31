@@ -1,11 +1,11 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { adminService } from '@/services/adminService';
+import { adminService, AdminStats } from '@/services/adminService';
 import toast from 'react-hot-toast';
 import { Loader2, BarChart3, TrendingUp, Users, DollarSign, Calendar, Download } from 'lucide-react';
 
 export default function AdminReportsPage() {
-    const [stats, setStats] = useState<any>(null);
+    const [stats, setStats] = useState<AdminStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [dateRange, setDateRange] = useState('30'); // days
 
@@ -19,6 +19,7 @@ export default function AdminReportsPage() {
             setStats(data);
         } catch (e) {
             console.error(e);
+            toast.error("Lỗi tải dữ liệu thống kê");
         } finally {
             setLoading(false);
         }
@@ -27,6 +28,19 @@ export default function AdminReportsPage() {
     if (loading) {
         return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-indigo-600" size={40} /></div>;
     }
+
+    // Extract data from nested structure
+    const totalUsers = stats?.users?.total || 0;
+    const learnersCount = stats?.users?.learners || 0;
+    const mentorsCount = stats?.users?.mentors || 0;
+    const adminsCount = totalUsers - learnersCount - mentorsCount;
+    const newUsersThisMonth = stats?.users?.new_7d || 0;
+    const totalRevenue = stats?.revenue?.total || 0;
+    const transactionsCount = 0; // Not directly available
+    const speakingSessions = stats?.content?.sessions_total || 0;
+    const topicsCount = stats?.content?.topics || 0;
+    const scenariosCount = stats?.content?.scenarios || 0;
+    const activeSubs = stats?.subscriptions?.active || 0;
 
     return (
         <div className="p-8">
@@ -56,25 +70,25 @@ export default function AdminReportsPage() {
                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white">
                     <Users className="mb-3" size={28} />
                     <p className="text-blue-100 text-sm font-bold">Tổng người dùng</p>
-                    <p className="text-4xl font-black mt-1">{stats?.total_users || 0}</p>
-                    <p className="text-blue-100 text-sm mt-2">+{stats?.new_users_this_month || 0} tháng này</p>
+                    <p className="text-4xl font-black mt-1">{totalUsers}</p>
+                    <p className="text-blue-100 text-sm mt-2">+{newUsersThisMonth} tuần này</p>
                 </div>
                 <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white">
                     <DollarSign className="mb-3" size={28} />
                     <p className="text-green-100 text-sm font-bold">Doanh thu</p>
-                    <p className="text-4xl font-black mt-1">{(stats?.total_revenue || 0).toLocaleString()}đ</p>
-                    <p className="text-green-100 text-sm mt-2">{stats?.transactions_count || 0} giao dịch</p>
+                    <p className="text-4xl font-black mt-1">{totalRevenue.toLocaleString()}đ</p>
+                    <p className="text-green-100 text-sm mt-2">{activeSubs} gói đang hoạt động</p>
                 </div>
                 <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white">
                     <BarChart3 className="mb-3" size={28} />
                     <p className="text-purple-100 text-sm font-bold">Learners Active</p>
-                    <p className="text-4xl font-black mt-1">{stats?.learners_count || 0}</p>
-                    <p className="text-purple-100 text-sm mt-2">{stats?.mentors_count || 0} mentors</p>
+                    <p className="text-4xl font-black mt-1">{learnersCount}</p>
+                    <p className="text-purple-100 text-sm mt-2">{mentorsCount} mentors</p>
                 </div>
                 <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-2xl text-white">
                     <TrendingUp className="mb-3" size={28} />
                     <p className="text-orange-100 text-sm font-bold">Sessions</p>
-                    <p className="text-4xl font-black mt-1">{stats?.speaking_sessions || 0}</p>
+                    <p className="text-4xl font-black mt-1">{speakingSessions}</p>
                     <p className="text-orange-100 text-sm mt-2">buổi luyện tập</p>
                 </div>
             </div>
@@ -101,28 +115,28 @@ export default function AdminReportsPage() {
                         <div>
                             <div className="flex justify-between mb-1">
                                 <span className="text-sm font-medium">Learners</span>
-                                <span className="text-sm font-bold">{stats?.learners_count || 0}</span>
+                                <span className="text-sm font-bold">{learnersCount}</span>
                             </div>
                             <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-blue-500 rounded-full" style={{ width: '70%' }} />
+                                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${totalUsers > 0 ? (learnersCount / totalUsers * 100) : 0}%` }} />
                             </div>
                         </div>
                         <div>
                             <div className="flex justify-between mb-1">
                                 <span className="text-sm font-medium">Mentors</span>
-                                <span className="text-sm font-bold">{stats?.mentors_count || 0}</span>
+                                <span className="text-sm font-bold">{mentorsCount}</span>
                             </div>
                             <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-purple-500 rounded-full" style={{ width: '20%' }} />
+                                <div className="h-full bg-purple-500 rounded-full" style={{ width: `${totalUsers > 0 ? (mentorsCount / totalUsers * 100) : 0}%` }} />
                             </div>
                         </div>
                         <div>
                             <div className="flex justify-between mb-1">
                                 <span className="text-sm font-medium">Admins</span>
-                                <span className="text-sm font-bold">{stats?.admins_count || 0}</span>
+                                <span className="text-sm font-bold">{adminsCount}</span>
                             </div>
                             <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-green-500 rounded-full" style={{ width: '10%' }} />
+                                <div className="h-full bg-green-500 rounded-full" style={{ width: `${totalUsers > 0 ? (adminsCount / totalUsers * 100) : 0}%` }} />
                             </div>
                         </div>
                     </div>
@@ -134,20 +148,20 @@ export default function AdminReportsPage() {
                 <h3 className="font-bold text-slate-900 mb-4">Thống kê nội dung</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="text-center p-4 bg-slate-50 rounded-xl">
-                        <p className="text-3xl font-black text-indigo-600">{stats?.topics_count || 0}</p>
+                        <p className="text-3xl font-black text-indigo-600">{topicsCount}</p>
                         <p className="text-sm text-slate-500 font-medium">Topics</p>
                     </div>
                     <div className="text-center p-4 bg-slate-50 rounded-xl">
-                        <p className="text-3xl font-black text-green-600">{stats?.scenarios_count || 0}</p>
+                        <p className="text-3xl font-black text-green-600">{scenariosCount}</p>
                         <p className="text-sm text-slate-500 font-medium">Scenarios</p>
                     </div>
                     <div className="text-center p-4 bg-slate-50 rounded-xl">
-                        <p className="text-3xl font-black text-purple-600">{stats?.packages_count || 0}</p>
-                        <p className="text-sm text-slate-500 font-medium">Packages</p>
+                        <p className="text-3xl font-black text-purple-600">{activeSubs}</p>
+                        <p className="text-sm text-slate-500 font-medium">Subscriptions</p>
                     </div>
                     <div className="text-center p-4 bg-slate-50 rounded-xl">
-                        <p className="text-3xl font-black text-orange-600">{stats?.resources_count || 0}</p>
-                        <p className="text-sm text-slate-500 font-medium">Resources</p>
+                        <p className="text-3xl font-black text-orange-600">{speakingSessions}</p>
+                        <p className="text-sm text-slate-500 font-medium">Sessions</p>
                     </div>
                 </div>
             </div>

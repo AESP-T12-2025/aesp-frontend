@@ -183,8 +183,8 @@ export default function AdminPackagesPage() {
                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-indigo-600" size={40} /></div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {packages.map(pkg => (
-                        <div key={pkg.package_id} className={`bg-white rounded-2xl p-6 border shadow-sm ${!pkg.is_active ? 'opacity-60' : ''}`}>
+                    {packages.map((pkg, index) => (
+                        <div key={pkg.package_id ?? pkg.id ?? index} className={`bg-white rounded-2xl p-6 border shadow-sm ${!pkg.is_active ? 'opacity-60' : ''}`}>
                             <div className="flex justify-between items-start mb-4">
                                 <div className="p-3 bg-indigo-50 rounded-xl">
                                     <Package className="text-indigo-600" size={24} />

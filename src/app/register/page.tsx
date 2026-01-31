@@ -78,7 +78,7 @@ export default function RegisterPage() {
             <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-4 pl-12 bg-gray-50 rounded-2xl outline-none text-gray-900 font-bold" placeholder="Email" />
           </div>
 
-          {/* Role Selection - For Testing */}
+          {/* Role Selection - Security: Admin accounts can only be created via backend script */}
           <div className="relative">
             <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-[#007bff]" size={20} />
             <select
@@ -88,7 +88,7 @@ export default function RegisterPage() {
             >
               <option value="LEARNER">Học viên (Learner)</option>
               <option value="MENTOR">Giảng viên (Mentor)</option>
-              <option value="ADMIN">Quản trị viên (Admin)</option>
+              {/* ADMIN role removed for security - Admin accounts must be created via backend script */}
             </select>
             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">▼</div>
           </div>
