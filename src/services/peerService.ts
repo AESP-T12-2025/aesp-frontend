@@ -42,6 +42,15 @@ export const peerService = {
     },
 
     /**
+     * Join queue for peer matching
+     * Alias for findPartner - kept for compatibility
+     */
+    joinQueue: async (topicId?: number): Promise<MatchResponse> => {
+        const res = await api.post('/peer/find-partner', { topic_id: topicId });
+        return res.data;
+    },
+
+    /**
      * Get peer session details
      * Includes session status and partner information
      */
