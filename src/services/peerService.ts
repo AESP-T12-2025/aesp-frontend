@@ -51,6 +51,14 @@ export const peerService = {
     },
 
     /**
+     * Check status of peer matching session
+     */
+    checkStatus: async (sessionId: number): Promise<MatchResponse> => {
+        const res = await api.get(`/peer/sessions/${sessionId}/status`);
+        return res.data;
+    },
+
+    /**
      * Get peer session details
      * Includes session status and partner information
      */
