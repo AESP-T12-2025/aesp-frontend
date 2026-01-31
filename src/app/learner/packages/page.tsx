@@ -12,20 +12,41 @@ export default function PackagesPage() {
     const [filter, setFilter] = useState<boolean | null>(null);
     const router = useRouter();
 
+    const [activePackageId, setActivePackageId] = useState<number | null>(null);
+
     useEffect(() => {
         let isMounted = true;
-        loadPackages(isMounted);
+        loadData(isMounted);
         return () => { isMounted = false; };
     }, [filter]);
 
-    const loadPackages = async (isMounted = true) => {
-        if (isMounted) setLoading(true); // Show loading when switching
+    const loadData = async (isMounted = true) => {
+        if (isMounted) setLoading(true);
         try {
-            const data = await paymentService.getPackages(filter === null ? undefined : filter);
-            if (isMounted) setPackages(data);
+            const [packagesData, subData] = await Promise.all([
+                paymentService.getPackages(filter === null ? undefined : filter),
+                paymentService.getMySubscription()
+            ]);
+            
+            if (isMounted) {
+                setPackages(packagesData);
+                // If subData.has_subscription is true, use package_id. 
+                // However, detailed logic: if no sub, assumes basic/free is active logic? 
+                // Or maybe basic has an ID too. The seed script gave Basic an ID.
+                // Creating a new user usually doesn't create a subscription entry for Basic unless we do it explicitly.
+                // For now, let's use the package_id from subscription if active.
+                if (subData.has_subscription) {
+                    setActivePackageId(subData.package_id);
+                } else {
+                    // If no subscription found, maybe default to the free package ID if we can match it by price=0?
+                    // Better to rely on what backend says, but if backend returns 'no active sub', it implies Free tier.
+                    // We can find the free package in packagesData.
+                    const freePkg = packagesData.find(p => p.price === 0);
+                    if (freePkg) setActivePackageId(freePkg.id!);
+                }
+            }
         } catch (error) {
-            console.error("Failed to load packages", error);
-            // Fallback for demo if DB is empty
+            console.error("Failed to load data", error);
             if (isMounted) setPackages([]);
         } finally {
             if (isMounted) setLoading(false);
@@ -39,7 +60,8 @@ export default function PackagesPage() {
                 payment_method: 'MOCK_BANKING'
             });
             toast.success("Đăng ký thành công!");
-            router.push('/learner');
+            // Refresh to update UI
+            loadData(true);
         } catch (error) {
             toast.error("Lỗi thanh toán");
             console.error(error);
@@ -112,6 +134,16 @@ export default function PackagesPage() {
                                     (typeof pkg.features === 'string' ? JSON.parse(pkg.features) :
                                         (typeof pkg.features === 'object' ? Object.keys(pkg.features || {}) : []));
 
+                                const activePkg = packages.find(p => p.id === activePackageId);
+                                const isUpgrade = activePkg ? pkg.price > activePkg.price : pkg.price > 0;
+                                const isDowngrade = activePkg ? pkg.price < activePkg.price : false;
+                                
+                                let buttonText = 'Chọn gói này';
+                                if (activePackageId === pkg.id) buttonText = 'Đang sử dụng';
+                                else if (isUpgrade) buttonText = 'Nâng cấp ngay';
+                                else if (isDowngrade) buttonText = 'Hạ cấp gói';
+                                else buttonText = 'Chuyển sang gói này';
+
                                 return (
                                     <div
                                         key={pkg.id}
@@ -150,9 +182,10 @@ export default function PackagesPage() {
                                             className={`w-full py-4 rounded-xl font-black text-center block transition-all ${isPopular
                                                 ? 'bg-white text-[#007bff] hover:bg-gray-100'
                                                 : 'bg-[#007bff] text-white hover:bg-blue-600'
-                                                }`}
+                                                } ${activePackageId === pkg.id ? 'opacity-80 cursor-default' : ''}`}
+                                            disabled={activePackageId === pkg.id}
                                         >
-                                            {pkg.price === 0 ? 'Đang sử dụng' : 'Chọn gói này'}
+                                            {buttonText}
                                         </button>
                                     </div>
                                 );
