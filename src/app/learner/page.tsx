@@ -27,18 +27,20 @@ export default function LearnerDashboard() {
     try {
       const { userService } = await import('@/services/userService');
       const { proficiencyService } = await import('@/services/proficiencyService');
+      const { learnerProgressService } = await import('@/services/learnerProgressService');
 
-      const [statsData, pathData] = await Promise.all([
+      const [statsData, pathData, progressData] = await Promise.all([
         userService.getStats(),
-        proficiencyService.getMyPath()
+        proficiencyService.getMyPath().catch(() => null),
+        learnerProgressService.getProgress().catch(() => null)
       ]);
 
       setCurrentPath(pathData);
       setStats({
-        practiceDays: statsData.lessons_completed || 0,
+        practiceDays: progressData?.total_sessions || statsData.lessons_completed || 0,
         xp: statsData.xp || 0,
         rank: getRank(statsData.xp || 0),
-        streak: statsData.streak || 0
+        streak: progressData?.streak || statsData.streak || 0
       });
     } catch {
       // Failed to load dashboard data - user may not have completed assessment yet

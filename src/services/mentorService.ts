@@ -103,7 +103,8 @@ export const mentorService = {
 
     getMyAvailability: async (): Promise<AvailabilitySlot[]> => {
         const res = await api.get('/mentors/availability');
-        return res.data;
+        // Handle wrapped response {availability: [...]}
+        return res.data.availability || res.data;
     },
 
     getSlotsByMentor: async (mentorId: number) => {
@@ -119,7 +120,8 @@ export const mentorService = {
     // === Issue #30: Booking System (NEW) ===
     getMentorBookings: async (): Promise<Booking[]> => {
         const res = await api.get('/mentors/bookings');
-        return res.data;
+        // Handle wrapped response {bookings: [...]}
+        return res.data.bookings || res.data;
     },
 
     bookMentor: async (mentorId: number, date: string, time: string) => {
@@ -156,7 +158,8 @@ export const mentorService = {
 
     getMyBookings: async () => {
         const res = await api.get('/mentors/bookings');
-        return res.data;
+        // Handle wrapped response {bookings: [...]}
+        return res.data.bookings || res.data;
     },
 
     // === Sessions ===
@@ -166,17 +169,23 @@ export const mentorService = {
     },
 
     startSession: async (bookingId: number) => {
-        const res = await api.post('/mentor-review/sessions/start', { booking_id: bookingId });
+        const res = await api.post('/mentor-review/sessions/start', null, {
+            params: { booking_id: bookingId }
+        });
         return res.data;
     },
 
     endSession: async (sessionId: number, notes?: string) => {
-        const res = await api.post(`/mentor-review/sessions/${sessionId}/end`, { notes });
+        const res = await api.post(`/mentor-review/sessions/${sessionId}/end`, null, {
+            params: { notes }
+        });
         return res.data;
     },
 
     updateSessionNotes: async (sessionId: number, notes: string) => {
-        const res = await api.put(`/mentor-review/sessions/${sessionId}/notes`, { notes });
+        const res = await api.put(`/mentor-review/sessions/${sessionId}/notes`, null, {
+            params: { notes }
+        });
         return res.data;
     },
 

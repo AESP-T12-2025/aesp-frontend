@@ -65,5 +65,33 @@ export const analyticsService = {
     getSystemStats: async (): Promise<SystemStats> => {
         const res = await api.get('/analytics/system-stats');
         return res.data;
+    },
+
+    // === Issue #35: Heatmap & Skills Radar ===
+
+    getHeatmap: async (startDate?: string, endDate?: string) => {
+        const res = await api.get('/analytics/heatmap', {
+            params: { start_date: startDate, end_date: endDate }
+        });
+        return res.data;
+    },
+
+    getSkillsRadar: async () => {
+        const res = await api.get('/analytics/skills-radar');
+        return res.data;
+    },
+
+    // === Issue #39: Report Generation ===
+
+    generateReport: async (period?: 'weekly' | 'monthly') => {
+        const res = await api.get('/analytics/report', {
+            params: { period }
+        });
+        return res.data;
+    },
+
+    requestEmailReport: async (email: string, period: 'weekly' | 'monthly' = 'weekly') => {
+        const res = await api.post('/analytics/report/email', { email, period });
+        return res.data;
     }
 };

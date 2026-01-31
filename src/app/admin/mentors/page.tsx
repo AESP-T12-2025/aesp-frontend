@@ -1,13 +1,25 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { mentorService, MentorProfile } from '@/services/mentorService';
+import { adminService } from '@/services/adminService';
 import toast from 'react-hot-toast';
-import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, UserX } from 'lucide-react';
+
+interface MentorData {
+    mentor_id: number;
+    user_id: number;
+    full_name: string;
+    bio?: string;
+    skills?: string;
+    verification_status: 'PENDING' | 'VERIFIED' | 'REJECTED';
+    total_bookings?: number;
+    rating?: number;
+}
 
 export default function AdminMentorsPage() {
-    const [mentors, setMentors] = useState<MentorProfile[]>([]);
+    const [mentors, setMentors] = useState<MentorData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [processingId, setProcessingId] = useState<number | null>(null);
 
     useEffect(() => {
         loadMentors();
@@ -15,8 +27,8 @@ export default function AdminMentorsPage() {
 
     const loadMentors = async () => {
         try {
-            const data = await mentorService.getAllMentors();
-            setMentors(data);
+            const data = await adminService.listMentors();
+            setMentors(Array.isArray(data) ? data : data.mentors || []);
         } catch (error) {
             toast.error("Lỗi tải danh sách Mentor");
         } finally {
@@ -25,12 +37,28 @@ export default function AdminMentorsPage() {
     };
 
     const handleVerify = async (id: number) => {
+        setProcessingId(id);
         try {
-            await mentorService.verifyMentor(id);
+            await adminService.verifyMentor(id);
             toast.success("Đã duyệt Mentor thành công!");
-            loadMentors(); // Reload to update status
+            loadMentors();
         } catch (error) {
             toast.error("Lỗi khi duyệt Mentor");
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const handleUnverify = async (id: number) => {
+        setProcessingId(id);
+        try {
+            await adminService.unverifyMentor(id);
+            toast.success("Đã hủy xác thực Mentor");
+            loadMentors();
+        } catch (error) {
+            toast.error("Lỗi khi hủy xác thực");
+        } finally {
+            setProcessingId(null);
         }
     };
 
@@ -62,21 +90,42 @@ export default function AdminMentorsPage() {
                                             <td className="p-4 text-gray-500">{mentor.skills}</td>
                                             <td className="p-4">
                                                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${mentor.verification_status === 'VERIFIED'
-                                                        ? 'bg-green-100 text-green-600'
-                                                        : 'bg-yellow-100 text-yellow-600'
+                                                    ? 'bg-green-100 text-green-600'
+                                                    : 'bg-yellow-100 text-yellow-600'
                                                     }`}>
                                                     {mentor.verification_status}
                                                 </span>
                                             </td>
                                             <td className="p-4">
-                                                {mentor.verification_status !== 'VERIFIED' && (
-                                                    <button
-                                                        onClick={() => handleVerify(mentor.mentor_id!)}
-                                                        className="flex items-center gap-1 bg-[#007bff] text-white px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-blue-600"
-                                                    >
-                                                        <CheckCircle size={16} /> Duyệt
-                                                    </button>
-                                                )}
+                                                <div className="flex gap-2">
+                                                    {mentor.verification_status !== 'VERIFIED' ? (
+                                                        <button
+                                                            onClick={() => handleVerify(mentor.mentor_id)}
+                                                            disabled={processingId === mentor.mentor_id}
+                                                            className="flex items-center gap-1 bg-[#007bff] text-white px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-blue-600 disabled:opacity-50"
+                                                        >
+                                                            {processingId === mentor.mentor_id ? (
+                                                                <Loader2 size={16} className="animate-spin" />
+                                                            ) : (
+                                                                <CheckCircle size={16} />
+                                                            )}
+                                                            Duyệt
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleUnverify(mentor.mentor_id)}
+                                                            disabled={processingId === mentor.mentor_id}
+                                                            className="flex items-center gap-1 bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-red-100 disabled:opacity-50"
+                                                        >
+                                                            {processingId === mentor.mentor_id ? (
+                                                                <Loader2 size={16} className="animate-spin" />
+                                                            ) : (
+                                                                <UserX size={16} />
+                                                            )}
+                                                            Hủy duyệt
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

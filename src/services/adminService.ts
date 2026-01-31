@@ -95,8 +95,113 @@ export const adminService = {
     },
 
     // Transactions
-    getAllTransactions: async () => {
-        const res = await api.get('/admin/transactions');
+    getAllTransactions: async (skip?: number, limit?: number) => {
+        const res = await api.get('/admin/transactions', {
+            params: { skip, limit }
+        });
+        return res.data;
+    },
+
+    // === Issue #34: Dashboard Stats and Analytics ===
+
+    getUserStats: async (startDate?: string, endDate?: string) => {
+        const res = await api.get('/admin/stats/users', {
+            params: { start_date: startDate, end_date: endDate }
+        });
+        return res.data;
+    },
+
+    getUsersByRole: async () => {
+        const res = await api.get('/admin/stats/users-by-role');
+        return res.data;
+    },
+
+    getActiveUsers: async () => {
+        const res = await api.get('/admin/stats/active-users');
+        return res.data;
+    },
+
+    getSubscriptionStats: async () => {
+        const res = await api.get('/admin/stats/subscriptions');
+        return res.data;
+    },
+
+    getRevenueStats: async () => {
+        const res = await api.get('/admin/stats/revenue');
+        return res.data;
+    },
+
+    getPopularContent: async (limit?: number) => {
+        const res = await api.get('/admin/stats/popular-content', {
+            params: { limit }
+        });
+        return res.data;
+    },
+
+    getScenarioCompletionRates: async () => {
+        const res = await api.get('/admin/stats/scenario-completion');
+        return res.data;
+    },
+
+    getMonthlyStats: async () => {
+        const res = await api.get('/admin/stats/monthly');
+        return res.data;
+    },
+
+    // === Issue #32: Mentor Management ===
+
+    listMentors: async (status?: string, skip?: number, limit?: number) => {
+        const res = await api.get('/admin/mentors', {
+            params: { status, skip, limit }
+        });
+        return res.data;
+    },
+
+    getMentorDetails: async (mentorId: number) => {
+        const res = await api.get(`/admin/mentors/${mentorId}`);
+        return res.data;
+    },
+
+    verifyMentor: async (mentorId: number) => {
+        const res = await api.put(`/admin/mentors/${mentorId}/verify`);
+        return res.data;
+    },
+
+    unverifyMentor: async (mentorId: number) => {
+        const res = await api.put(`/admin/mentors/${mentorId}/unverify`);
+        return res.data;
+    },
+
+    // === Issue #26: User Account Management ===
+
+    toggleUserStatus: async (userId: number) => {
+        const res = await api.post(`/admin/users/${userId}/toggle-status`);
+        return res.data;
+    },
+
+    updateUserStatus: async (userId: number, isActive: boolean) => {
+        const res = await api.put(`/admin/users/${userId}/status`, null, {
+            params: { is_active: isActive }
+        });
+        return res.data;
+    },
+
+    // === Issue #38: Purchase History Export ===
+
+    exportPurchases: async (format: 'csv' | 'pdf' = 'csv') => {
+        const res = await api.get('/admin/purchases/export', {
+            params: { format },
+            responseType: format === 'pdf' ? 'blob' : 'text'
+        });
+        return res.data;
+    },
+
+    // === User List ===
+
+    getAllUsers: async (skip?: number, limit?: number, role?: string) => {
+        const res = await api.get('/users', {
+            params: { skip, limit, role }
+        });
         return res.data;
     }
 };

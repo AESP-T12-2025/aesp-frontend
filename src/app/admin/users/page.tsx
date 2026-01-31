@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { User, Edit, Trash2, Loader2, RefreshCw } from "lucide-react";
-import api, { User as UserType } from "@/lib/api";
+import { User, Edit, Trash2, Loader2, RefreshCw, ToggleLeft, ToggleRight } from "lucide-react";
+import { adminService } from "@/services/adminService";
+import { User as UserType } from "@/lib/api";
+import toast from "react-hot-toast";
 
 export default function UsersPage() {
     const [users, setUsers] = useState<UserType[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [togglingId, setTogglingId] = useState<number | null>(null);
     const isMounted = useRef(false);
 
     useEffect(() => {
@@ -20,8 +23,8 @@ export default function UsersPage() {
         setLoading(true);
         setError("");
         try {
-            const response = await api.get("/users");
-            if (isMounted.current) setUsers(response.data);
+            const data = await adminService.getAllUsers();
+            if (isMounted.current) setUsers(Array.isArray(data) ? data : data.users || []);
         } catch (err) {
             console.error("Fetch users error:", err);
             let errorMessage = "Failed to fetch users. Check console for details.";
@@ -32,6 +35,19 @@ export default function UsersPage() {
             if (isMounted.current) setError(errorMessage);
         } finally {
             if (isMounted.current) setLoading(false);
+        }
+    };
+
+    const handleToggleStatus = async (userId: number, currentStatus: boolean) => {
+        setTogglingId(userId);
+        try {
+            await adminService.updateUserStatus(userId, !currentStatus);
+            toast.success(`Đã ${!currentStatus ? 'kích hoạt' : 'vô hiệu hóa'} tài khoản`);
+            fetchUsers();
+        } catch (err) {
+            toast.error("Lỗi cập nhật trạng thái");
+        } finally {
+            setTogglingId(null);
         }
     };
 
@@ -90,11 +106,25 @@ export default function UsersPage() {
                                             {user.is_active ? 'Active' : 'Inactive'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button className="text-indigo-600 hover:text-indigo-900 mr-4">
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex items-center justify-end gap-2">
+                                        <button
+                                            onClick={() => handleToggleStatus(user.user_id, user.is_active)}
+                                            disabled={togglingId === user.user_id}
+                                            className={`p-1.5 rounded-lg transition-colors ${user.is_active ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-50'}`}
+                                            title={user.is_active ? 'Vô hiệu hóa' : 'Kích hoạt'}
+                                        >
+                                            {togglingId === user.user_id ? (
+                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                            ) : user.is_active ? (
+                                                <ToggleRight className="w-5 h-5" />
+                                            ) : (
+                                                <ToggleLeft className="w-5 h-5" />
+                                            )}
+                                        </button>
+                                        <button className="text-indigo-600 hover:text-indigo-900 p-1.5">
                                             <Edit className="w-4 h-4" />
                                         </button>
-                                        <button className="text-red-600 hover:text-red-900">
+                                        <button className="text-red-600 hover:text-red-900 p-1.5">
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                     </td>
