@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Mic, Volume2, Award, Zap, MoreVertical, Settings, Sparkles, StopCircle, RefreshCw, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Mic, Volume2, Award, Zap, MoreVertical, Settings, Sparkles, StopCircle, RefreshCw, CheckCircle, X } from 'lucide-react';
 import Link from 'next/link';
 import { scenarioService, Scenario } from '@/services/scenarioService';
 import toast from 'react-hot-toast';
@@ -19,6 +19,8 @@ export default function PracticeRoomPage() {
   const [feedback, setFeedback] = useState<any>(null);
   const [transcript, setTranscript] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [isGettingSuggestion, setIsGettingSuggestion] = useState(false);
 
   const recognitionRef = useRef<any>(null);
   const transcriptRef = useRef("");
@@ -45,6 +47,22 @@ export default function PracticeRoomPage() {
       toast.error("Lỗi kết nối AI");
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleGetSuggestion = async () => {
+    if (!scenario) return;
+    setIsGettingSuggestion(true);
+    try {
+      const { practiceService } = await import('@/services/practiceService');
+      const res = await practiceService.getSuggestedResponse(scenario.description || scenario.title);
+      setSuggestion(res.suggestion);
+      toast.success("Đã tạo gợi ý mới!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi khi lấy gợi ý");
+    } finally {
+      setIsGettingSuggestion(false);
     }
   };
 
@@ -112,16 +130,24 @@ export default function PracticeRoomPage() {
     const SpeechRecognition = window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     recognition.lang = 'en-US';
-    recognition.continuous = true; // CHANGED TO TRUE FOR LONGER SPEECH
+    recognition.continuous = false; // Tạm tắt continuous để test ổn định
     recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
 
     recognitionRef.current = recognition;
 
     recognition.onstart = () => {
+      console.log("Recognition STARTED");
       setIsRecording(true);
       setRecordingStartTime(Date.now());
       toast("Đang lắng nghe...", { icon: '🎙️' });
     };
+
+    recognition.onaudiostart = () => console.log("Audio STARTED");
+    recognition.onsoundstart = () => console.log("Sound STARTED");
+    recognition.onspeechstart = () => console.log("Speech STARTED");
+    recognition.onspeechend = () => console.log("Speech ENDED");
+    recognition.nomatch = () => console.log("No Match");
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       let fullText = "";
@@ -141,11 +167,22 @@ export default function PracticeRoomPage() {
     };
 
     recognition.onerror = (event: any) => {
-      console.error("Speech recognition error:", event.error);
-      if (event.error !== 'no-speech') {
-        toast.error(`Lỗi Mic: ${event.error}`);
+      // Don't log "no-speech" as error, it's normal behavior when user doesn't speak
+      if (event.error === 'no-speech') {
+        console.log("Speech recognition ended (no speech detected)");
+        setIsRecording(false);
+        return;
       }
+
+      console.error("Speech recognition error:", event.error);
       setIsRecording(false);
+      
+      if (event.error === 'not-allowed') {
+         toast.error("Vui lòng cấp quyền Micro để sử dụng!");
+         return;
+      }
+
+      toast.error(`Lỗi Mic: ${event.error}`);
     };
 
     recognition.start();
@@ -161,6 +198,32 @@ export default function PracticeRoomPage() {
         analyzeTranscript(transcriptRef.current, duration);
       }
     }
+  };
+
+  const playAudio = (text: string) => {
+    if ('speechSynthesis' in window) {
+      // Cancel current utterance if any
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.9; // Slightly slower for clarity
+      window.speechSynthesis.speak(utterance);
+    } else {
+      toast.error("Trình duyệt không hỗ trợ đọc âm thanh");
+    }
+  };
+
+  const handleRefresh = () => {
+    setTranscript("");
+    setFeedback(null);
+    transcriptRef.current = "";
+    // If recording, stop it too
+    if (isRecording && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+    }
+    toast.success("Đã làm mới hội thoại");
   };
 
   if (isLoading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><Loader2 className="animate-spin text-[#007bff]" size={40} /></div>;
@@ -198,7 +261,7 @@ export default function PracticeRoomPage() {
         </header>
 
         {/* Content */}
-        <div className="flex-1 flex flex-col items-center justify-center p-8 relative overflow-hidden">
+        <div className="flex-1 flex flex-col items-center p-8 relative overflow-y-auto custom-scrollbar">
           {/* Background Blob */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-100 rounded-full blur-[100px] opacity-50 pointer-events-none"></div>
 
@@ -304,13 +367,40 @@ export default function PracticeRoomPage() {
                           ))}
                         </div>
                       </div>
-                    ) : (
+                    ) : feedback.pronunciation_score > 0 ? (
                       <p className="text-sm text-green-600 font-bold flex items-center gap-1">
                         <CheckCircle size={14} /> Phát âm rất tốt! Không có lỗi đáng kể.
                       </p>
+                    ) : (
+                       <p className="text-sm text-gray-500 italic">Không thể phân tích phát âm.</p>
                     )}
                   </div>
                 )}
+              </div>
+            )}
+
+
+
+            {suggestion && !isRecording && (
+              <div className="mb-6 bg-amber-50 p-6 rounded-2xl shadow-sm border border-amber-200 text-left relative animate-in fade-in slide-in-from-bottom-2">
+                <button 
+                  onClick={() => setSuggestion(null)} 
+                  className="absolute top-3 right-3 text-amber-400 hover:text-amber-600 p-1 bg-white/50 rounded-full"
+                >
+                  <X size={16}/>
+                </button>
+                <h4 className="font-bold text-amber-700 text-sm mb-2 flex items-center gap-2 uppercase tracking-wide">
+                  <Sparkles size={16} /> Gợi ý câu trả lời
+                </h4>
+                <p className="text-xl font-medium text-gray-800 mb-4 leading-relaxed">"{suggestion}"</p>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => playAudio(suggestion)} 
+                    className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg text-amber-700 text-sm font-bold shadow-sm border border-amber-100 hover:bg-amber-100 transition-all"
+                  >
+                    <Volume2 size={16}/> Nghe thử
+                  </button>
+                </div>
               </div>
             )}
 
@@ -318,13 +408,19 @@ export default function PracticeRoomPage() {
               {!feedback ? (
                 <>
                   <button
-                    onClick={() => toast("Hãy thử nói: 'Hello, I would like to introduce myself...'", { icon: '💡' })}
-                    className="px-6 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all flex items-center gap-2"
+                    onClick={handleGetSuggestion}
+                    disabled={isGettingSuggestion}
+                    className="px-6 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-wait"
                   >
-                    <Sparkles size={16} className="text-yellow-400" /> Gợi ý câu trả lời
+                    {isGettingSuggestion ? (
+                      <Loader2 size={16} className="animate-spin text-yellow-500" />
+                    ) : (
+                      <Sparkles size={16} className="text-yellow-400" />
+                    )}
+                    {isGettingSuggestion ? "Đang suy nghĩ..." : "Gợi ý câu trả lời"}
                   </button>
                   <button
-                    onClick={() => { setTranscript(""); setFeedback(null); }}
+                    onClick={handleRefresh}
                     className="px-6 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all flex items-center gap-2"
                   >
                     <RefreshCw size={16} /> Làm mới
@@ -333,7 +429,7 @@ export default function PracticeRoomPage() {
               ) : (
                 <>
                   <button
-                    onClick={() => { setTranscript(""); setFeedback(null); }}
+                    onClick={handleRefresh}
                     className="px-6 py-3 bg-white border border-gray-200 shadow-sm rounded-xl text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all flex items-center gap-2"
                   >
                     <RefreshCw size={16} /> Luyện tập lại
@@ -362,7 +458,11 @@ export default function PracticeRoomPage() {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
           {vocab.length > 0 ? vocab.map((item, idx) => (
-            <div key={idx} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all group cursor-pointer">
+            <div 
+                key={idx} 
+                className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all group cursor-pointer"
+                onClick={() => playAudio(item.phrase)}
+            >
               <div className="flex justify-between items-start mb-2">
                 <span className="font-bold text-lg text-gray-900 group-hover:text-[#007bff] transition-colors">{item.phrase}</span>
                 <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-[#007bff] group-hover:text-white transition-all">
@@ -380,17 +480,22 @@ export default function PracticeRoomPage() {
           )}
         </div>
 
-        <div className="p-6 border-t border-gray-100 bg-gray-50">
-          <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-bold text-gray-400 uppercase">Độ chính xác</span>
-              <span className="text-sm font-black text-green-500">85%</span>
-            </div>
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full bg-green-500 w-[85%] rounded-full"></div>
+        {feedback && (
+          <div className="p-6 border-t border-gray-100 bg-gray-50 animate-in slide-in-from-bottom-5 fade-in duration-500">
+            <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-bold text-gray-400 uppercase">Độ chính xác</span>
+                <span className="text-sm font-black text-green-500">{feedback.pronunciation_score || 0}%</span>
+              </div>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-green-500 rounded-full transition-all duration-1000 ease-out" 
+                  style={{ width: `${feedback.pronunciation_score || 0}%` }}
+                ></div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
     </div>

@@ -33,6 +33,11 @@ export const practiceService = {
     return res.data;
   },
 
+  getSuggestedResponse: async (context: string) => {
+    const res = await api.post('/ai/suggest-reply', { context });
+    return res.data; // { suggestion: "..." }
+  },
+
   getAllScenarios: async () => {
     const res = await api.get('/scenarios');
     return res.data;

@@ -2,14 +2,17 @@
 import React, { useEffect, useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { scenarioService, Scenario } from '@/services/scenarioService';
-import { Search, Zap, Play, Filter, Clock, BarChart } from 'lucide-react';
+import { Search, Zap, Play, Filter, Clock, BarChart, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { Loader2 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 export default function ScenariosPage() {
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get('q') || '';
+  
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState(initialQuery);
 
   useEffect(() => {
     const fetch = async () => {
