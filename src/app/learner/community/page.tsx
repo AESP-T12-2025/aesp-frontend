@@ -22,8 +22,8 @@ export default function CommunityPage() {
 
             if (res.status === 'MATCHED') {
                 setStatus('MATCHED');
-                // Redirect to room (future) or show success
-                // router.push(`/learner/peer/${res.session_id}`);
+                // Automatically redirect to the peer room
+                router.push(`/learner/peer?session_id=${res.session_id}`);
             }
         } catch (error) {
             console.error("Failed to join queue", error);
@@ -112,7 +112,10 @@ export default function CommunityPage() {
                                     <h3 className="text-2xl font-bold text-slate-900 mb-2">Đã tìm thấy!</h3>
                                     <p className="text-slate-500">Đang kết nối vào phòng học...</p>
                                 </div>
-                                <button className="px-8 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-colors">
+                                <button 
+                                    onClick={() => router.push(`/learner/peer?session_id=${sessionId}`)}
+                                    className="px-8 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-colors"
+                                >
                                     Vào phòng ngay
                                 </button>
                             </div>
