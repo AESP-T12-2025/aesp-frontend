@@ -36,7 +36,7 @@ export default function MentorTipsPage() {
                     p.content?.toLowerCase().includes('tips') ||
                     p.content?.toLowerCase().includes('mẹo')
                 );
-                setTips(filteredTips);
+                setTips(filteredTips as unknown as Tip[]);
             }
         } catch (e) {
             console.error(e);

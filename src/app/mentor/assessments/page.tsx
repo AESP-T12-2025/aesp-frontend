@@ -32,7 +32,7 @@ export default function MentorAssessmentsPage() {
     const loadBookings = async () => {
         try {
             const data = await mentorService.getMyBookings();
-            setBookings(data);
+            setBookings(data as unknown as Booking[]);
         } catch (e) {
             console.error(e);
         } finally {
@@ -94,8 +94,8 @@ export default function MentorAssessmentsPage() {
                                     key={booking.booking_id}
                                     onClick={() => setSelectedBooking(booking)}
                                     className={`bg-white rounded-2xl p-5 border cursor-pointer transition-all ${selectedBooking?.booking_id === booking.booking_id
-                                            ? 'border-blue-400 ring-2 ring-blue-100'
-                                            : 'border-gray-100 hover:border-blue-200'
+                                        ? 'border-blue-400 ring-2 ring-blue-100'
+                                        : 'border-gray-100 hover:border-blue-200'
                                         }`}
                                 >
                                     <div className="flex justify-between items-start">
@@ -113,8 +113,8 @@ export default function MentorAssessmentsPage() {
                                             </div>
                                         </div>
                                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${booking.status === 'COMPLETED'
-                                                ? 'bg-green-100 text-green-700'
-                                                : 'bg-yellow-100 text-yellow-700'
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-yellow-100 text-yellow-700'
                                             }`}>
                                             {booking.status}
                                         </span>
@@ -170,8 +170,8 @@ export default function MentorAssessmentsPage() {
                                                 type="button"
                                                 onClick={() => setFormData({ ...formData, level_assigned: formData.level_assigned === level ? '' : level })}
                                                 className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${formData.level_assigned === level
-                                                        ? 'bg-[#007bff] text-white'
-                                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                    ? 'bg-[#007bff] text-white'
+                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                                     }`}
                                             >
                                                 {level}
