@@ -49,6 +49,8 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
   const menuItems = [
     { name: 'Dashboard', href: '/learner', icon: '📊' },
     { name: 'Thư viện', href: '/learner/topics', icon: '📚' },
+    { name: 'Luyện tập', href: '/learner/scenarios', icon: '🎤' },
+    { name: 'Peer Practice', href: '/learner/peer', icon: '👥' },
     { name: 'Tìm Mentor', href: '/learner/mentors', icon: '👨‍🏫' },
     { name: 'Lịch học', href: '/learner/mentors/my-bookings', icon: '📅' },
     { name: 'Từ Mentor', href: '/learner/shared-topics', icon: '🎁' },
