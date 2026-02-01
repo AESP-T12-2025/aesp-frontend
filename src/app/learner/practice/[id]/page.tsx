@@ -94,11 +94,12 @@ export default function PracticePage() {
       const aiMessage: Message = {
         id: messages.length + 2,
         role: 'ai',
-        content: response.data.response || response.data.message || "I understand. Please continue practicing!",
+        content: response.data.response || "I understand. Please continue practicing!",
         timestamp: new Date()
       };
 
       setMessages(prev => [...prev, aiMessage]);
+      playMessage(aiMessage.content);
     } catch (e: any) {
       // Fallback response if API fails
       const fallbackMessage: Message = {
@@ -121,14 +122,161 @@ export default function PracticePage() {
     }
   };
 
-  const toggleRecording = () => {
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const [mimeType, setMimeType] = useState('');
+  
+  // Web Speech API for real-time speech recognition
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    // Check if browser supports Speech Recognition
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+      
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        
+        // Update input with final + interim results
+        if (finalTranscript) {
+          setInputText(prev => prev + finalTranscript);
+        }
+        // Show interim results in real-time (optional: you can show in a separate state)
+      };
+      
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        if (event.error === 'not-allowed') {
+          toast.error('Vui lòng cấp quyền microphone');
+        } else if (event.error !== 'aborted') {
+          toast.error('Lỗi nhận diện giọng nói: ' + event.error);
+        }
+        setIsRecording(false);
+      };
+      
+      recognition.onend = () => {
+        if (isRecording) {
+          // Restart if still recording (handles continuous recognition)
+          try {
+            recognition.start();
+          } catch (e) {
+            setIsRecording(false);
+          }
+        }
+      };
+      
+      recognitionRef.current = recognition;
+    }
+    
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, []);
+
+  const toggleRecording = async () => {
     if (isRecording) {
-      setIsRecording(false);
-      toast.success("Đã dừng ghi âm");
+      stopRecording();
     } else {
+      await startRecording();
+    }
+  };
+
+  const startRecording = async () => {
+    // Check if Speech Recognition is supported
+    if (!recognitionRef.current) {
+      toast.error('Trình duyệt không hỗ trợ nhận diện giọng nói');
+      return;
+    }
+    
+    try {
+      // Request microphone permission first
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      recognitionRef.current.start();
       setIsRecording(true);
-      toast("🎤 Đang ghi âm... (Coming soon)", { icon: '🚧' });
-      setTimeout(() => setIsRecording(false), 3000);
+      toast.success("🎤 Đang nghe... Hãy nói tiếng Anh!");
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      toast.error("Không thể truy cập microphone. Vui lòng kiểm tra quyền truy cập.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (recognitionRef.current && isRecording) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+      toast.success("✅ Đã dừng ghi âm");
+    }
+  };
+
+  const handleAudioUpload = async (blob: Blob, type: string) => {
+    // This function is kept for backward compatibility but no longer used
+    // with Web Speech API
+    setSending(true);
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = async () => {
+        const base64Audio = (reader.result as string).split(',')[1];
+        
+        // Extract extension from mime type (e.g., 'audio/webm' -> 'webm')
+        const extension = type.split('/')[1]?.split(';')[0] || 'webm';
+        
+        const response = await api.post('/ai/stt', {
+          audio_data: base64Audio,
+          format: extension,
+          sample_rate: 16000
+        });
+
+        if (response.data.text) {
+          setInputText(prev => prev + (prev ? ' ' : '') + response.data.text);
+          toast.success("Đã nhận diện giọng nói");
+        } else {
+          toast.error("Không nghe rõ, vui lòng thử lại");
+        }
+      };
+    } catch (err) {
+      console.error("STT Error:", err);
+      toast.error("Không thể nhận diện giọng nói");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const playMessage = async (text: string) => {
+    try {
+      const response = await api.post('/ai/tts', { text });
+      const audioUrl = response.data.audio_url;
+      if (audioUrl) {
+        // Handle path if it's relative
+        const fullUrl = audioUrl.startsWith('http') 
+          ? audioUrl 
+          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${audioUrl}`;
+        
+        const audio = new Audio(fullUrl);
+        audio.play();
+      }
+    } catch (err) {
+      console.error("TTS Error:", err);
+      toast.error("Không thể phát âm thanh");
     }
   };
 
@@ -216,7 +364,18 @@ export default function PracticePage() {
                       ? 'bg-green-600 text-white rounded-br-md'
                       : 'bg-gray-100 text-gray-800 rounded-bl-md'
                     }`}>
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="whitespace-pre-wrap flex-1">{msg.content}</p>
+                      {msg.role === 'ai' && (
+                        <button 
+                          onClick={() => playMessage(msg.content)}
+                          className="p-1.5 hover:bg-white/20 rounded-lg transition-colors flex-shrink-0"
+                          title="Phát âm"
+                        >
+                          <Volume2 size={16} />
+                        </button>
+                      )}
+                    </div>
                     <p className={`text-xs mt-2 ${msg.role === 'user' ? 'text-green-200' : 'text-gray-400'}`}>
                       {msg.timestamp.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                     </p>
