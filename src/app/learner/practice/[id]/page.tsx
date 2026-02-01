@@ -147,9 +147,9 @@ export default function PracticeRoomPage() {
     recognition.onsoundstart = () => console.log("Sound STARTED");
     recognition.onspeechstart = () => console.log("Speech STARTED");
     recognition.onspeechend = () => console.log("Speech ENDED");
-    recognition.nomatch = () => console.log("No Match");
+    recognition.onnomatch = () => console.log("No Match");
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    recognition.onresult = (event: any) => {
       let fullText = "";
       for (let i = 0; i < event.results.length; i++) {
         fullText += event.results[i][0].transcript;

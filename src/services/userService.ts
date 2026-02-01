@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import api from "@/lib/api";
 
 export interface UserStats {
     full_name: string;
@@ -19,17 +17,11 @@ export interface UserStats {
 
 export const userService = {
     getStats: async (): Promise<UserStats> => {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_URL}/users/me/stats`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await api.get("/users/me/stats");
         return response.data;
     },
     getMyProfile: async () => {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_URL}/users/me`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await api.get("/users/me");
         return response.data;
     },
     updateMe: async (data: { 
@@ -40,10 +32,7 @@ export const userService = {
         preferred_practice_time?: string,
         target_level?: string 
     }) => {
-        const token = localStorage.getItem('token');
-        const response = await axios.put(`${API_URL}/users/me`, data, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await api.put("/users/me", data);
         return response.data;
     },
 };

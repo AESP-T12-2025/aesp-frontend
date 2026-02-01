@@ -217,14 +217,14 @@ export const authService = {
      * Store access token in localStorage
      */
     setToken: (token: string) => {
-        localStorage.setItem('access_token', token);
+        localStorage.setItem('token', token);
     },
 
     /**
      * Get access token from localStorage
      */
     getToken: (): string | null => {
-        return localStorage.getItem('access_token');
+        return localStorage.getItem('token');
     },
 
     /**
@@ -232,13 +232,13 @@ export const authService = {
      * Used for logout
      */
     removeToken: () => {
-        localStorage.removeItem('access_token');
+        localStorage.removeItem('token');
     },
 
     /**
      * Check if user is authenticated
      */
     isAuthenticated: (): boolean => {
-        return !!localStorage.getItem('access_token');
+        return !!localStorage.getItem('token');
     }
 };
