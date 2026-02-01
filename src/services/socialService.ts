@@ -161,6 +161,15 @@ export const socialService = {
         return res.data;
     },
 
+    /**
+     * Report a post
+     * Flag post for admin moderation
+     */
+    reportPost: async (postId: number) => {
+        const res = await api.post(`/social/posts/${postId}/report`);
+        return res.data;
+    },
+
     // ========================================================================
     // ADMIN MODERATION
     // ========================================================================

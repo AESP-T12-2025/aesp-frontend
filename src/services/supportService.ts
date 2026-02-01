@@ -12,7 +12,7 @@ export interface Ticket {
 
 export const supportService = {
     getAll: async (status?: string) => {
-        const res = await api.get('/support/', { params: { status } });
+        const res = await api.get('/support', { params: { status } });
         return res.data;
     },
     getById: async (id: number) => {
@@ -20,7 +20,7 @@ export const supportService = {
         return res.data;
     },
     create: async (data: { title: string, description: string, priority?: string }) => {
-        const res = await api.post('/support/', data);
+        const res = await api.post('/support', data);
         return res.data;
     },
     update: async (id: number, data: { status?: string, priority?: string }) => {

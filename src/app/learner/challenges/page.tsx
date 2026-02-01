@@ -28,17 +28,35 @@ export default function ChallengesPage() {
 
     const loadChallenges = async () => {
         try {
-            // In real app, fetch from backend
-            // For now, show sample challenges
-            setChallenges([
-                { id: 1, title: 'Luyện tập 15 phút', description: 'Hoàn thành 15 phút luyện nói hôm nay', xp_reward: 50, type: 'daily', progress: 8, target: 15, completed: false },
-                { id: 2, title: 'Học 10 từ mới', description: 'Thêm 10 từ vựng vào bộ sưu tập', xp_reward: 30, type: 'daily', progress: 10, target: 10, completed: true },
-                { id: 3, title: 'Streak 7 ngày', description: 'Duy trì chuỗi học 7 ngày liên tiếp', xp_reward: 200, type: 'weekly', progress: 5, target: 7, completed: false },
-                { id: 4, title: 'Hoàn thành 5 chủ đề', description: 'Luyện tập 5 chủ đề khác nhau trong tuần', xp_reward: 150, type: 'weekly', progress: 3, target: 5, completed: false },
-                { id: 5, title: 'Đạt điểm 9+', description: 'Đạt điểm phát âm 9/10 trở lên', xp_reward: 100, type: 'special', progress: 0, target: 1, completed: false },
+            // Fetch real challenges from backend
+            const [challengesData, progressData] = await Promise.all([
+                gamificationService.getChallenges(),
+                gamificationService.getMyProgress()
             ]);
-            setStats({ totalCompleted: 12, totalXP: 1580, currentStreak: 5 });
+
+            // Map backend data to our Challenge interface
+            const mappedChallenges = (challengesData || []).map((c: any) => ({
+                id: c.challenge_id || c.id,
+                title: c.title || c.name,
+                description: c.description,
+                xp_reward: c.points_reward || c.xp_reward || 0,
+                type: c.challenge_type?.toLowerCase() || c.type || 'daily',
+                progress: c.progress || 0,
+                target: c.target || 1,
+                completed: c.completed || c.status === 'COMPLETED',
+                expires_at: c.end_date || c.expires_at
+            }));
+
+            setChallenges(mappedChallenges);
+
+            // Set stats from progress data
+            setStats({
+                totalCompleted: progressData?.challenges_completed || progressData?.total_completed || 0,
+                totalXP: progressData?.total_xp || progressData?.xp || 0,
+                currentStreak: progressData?.streak || progressData?.current_streak || 0
+            });
         } catch (e) {
+            console.error("Error loading challenges:", e);
             toast.error("Lỗi tải thử thách");
         } finally {
             setLoading(false);

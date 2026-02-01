@@ -354,15 +354,35 @@ export default function Home() {
             <p className="text-gray-500 font-medium">Nền tảng luyện nói tiếng Anh thông minh hàng đầu dành cho người Việt.</p>
           </div>
           {[
-            { header: "Học tập", links: ["Chủ đề", "Kịch bản", "Mentor", "Cộng đồng"] },
-            { header: "Về chúng tôi", links: ["Giới thiệu", "Liên hệ", "Blog", "Tuyển dụng"] },
-            { header: "Điều khoản", links: ["Quyền riêng tư", "Điều khoản sử dụng", "Bảo mật", "Cookie"] },
+            {
+              header: "Học tập", links: [
+                { label: "Chủ đề", href: "/learner/topics" },
+                { label: "Kịch bản", href: "/learner/topics" },
+                { label: "Mentor", href: "/learner/mentors" },
+                { label: "Cộng đồng", href: "/learner/community" }
+              ]
+            },
+            {
+              header: "Về chúng tôi", links: [
+                { label: "Giới thiệu", href: "#" },
+                { label: "Liên hệ", href: "#" },
+                { label: "Blog", href: "#" },
+                { label: "Đăng nhập", href: "/login" }
+              ]
+            },
+            {
+              header: "Điều khoản", links: [
+                { label: "Điều khoản sử dụng", href: "/policies/terms" },
+                { label: "Chính sách bảo mật", href: "/policies/privacy" },
+                { label: "Chính sách hoàn tiền", href: "/policies/refund" }
+              ]
+            },
           ].map((col, i) => (
             <div key={i}>
               <h4 className="font-bold text-gray-900 mb-6">{col.header}</h4>
               <ul className="space-y-4">
                 {col.links.map(link => (
-                  <li key={link}><a href="#" className="text-gray-500 hover:text-[#007bff] font-medium transition">{link}</a></li>
+                  <li key={link.label}><Link href={link.href} className="text-gray-500 hover:text-[#007bff] font-medium transition">{link.label}</Link></li>
                 ))}
               </ul>
             </div>

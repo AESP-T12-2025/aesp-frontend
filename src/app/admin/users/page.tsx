@@ -96,9 +96,27 @@ export default function UsersPage() {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.full_name}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : user.role === 'MENTOR' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
-                                            {user.role}
-                                        </span>
+                                        <select
+                                            value={user.role}
+                                            onChange={async (e) => {
+                                                const newRole = e.target.value;
+                                                if (newRole === user.role) return;
+                                                try {
+                                                    await adminService.changeUserRole(user.user_id, newRole);
+                                                    toast.success(`Changed ${user.full_name} to ${newRole}`);
+                                                    setUsers(prev => prev.map(u =>
+                                                        u.user_id === user.user_id ? { ...u, role: newRole } : u
+                                                    ));
+                                                } catch (err) {
+                                                    toast.error("Failed to change role");
+                                                }
+                                            }}
+                                            className={`px-2 py-1 text-xs font-semibold rounded-full cursor-pointer border-0 ${user.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : user.role === 'MENTOR' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}
+                                        >
+                                            <option value="LEARNER">LEARNER</option>
+                                            <option value="MENTOR">MENTOR</option>
+                                            <option value="ADMIN">ADMIN</option>
+                                        </select>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-center">
                                         {/* Toggle Switch for Enable/Disable */}

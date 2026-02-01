@@ -107,6 +107,13 @@ export const adminService = {
         return res.data;
     },
 
+    changeUserRole: async (userId: number, newRole: string) => {
+        const res = await api.put(`/admin/users/${userId}/role`, null, {
+            params: { new_role: newRole }
+        });
+        return res.data;
+    },
+
     // ========================================================================
     // SUBSCRIPTION STATS
     // ========================================================================

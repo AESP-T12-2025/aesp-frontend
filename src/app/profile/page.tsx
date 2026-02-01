@@ -10,35 +10,37 @@ export default function ProfilePage() {
   const { user, login, logout } = useAuth();
   const [stats, setStats] = React.useState<any>(null);
   const [profile, setProfile] = React.useState<any>(null);
-  
+
   // Edit states
   const [fullName, setFullName] = React.useState('');
   const [dailyGoal, setDailyGoal] = React.useState(15);
   const [learningTarget, setLearningTarget] = React.useState('General English');
   const [targetLevel, setTargetLevel] = React.useState('B1');
   const [preferredTime, setPreferredTime] = React.useState('Anytime');
-  
+
   const [isEditing, setIsEditing] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
 
   React.useEffect(() => {
-    loadData();
+    if (user) {
+      loadData();
+    }
   }, [user]);
 
   const loadData = async () => {
     try {
       const statsData = await userService.getStats();
       setStats(statsData);
-      
+
       const profileData = await userService.getMyProfile();
       setProfile(profileData);
-      
+
       // Init states
       if (profileData.full_name) setFullName(profileData.full_name);
       if (profileData.daily_learning_goal) setDailyGoal(profileData.daily_learning_goal);
       if (profileData.learning_target) setLearningTarget(profileData.learning_target);
       if (profileData.preferred_practice_time) setPreferredTime(profileData.preferred_practice_time);
-      
+
       // Target level priority: Profile (stored user preference) > Stats (assessed level) > Default B1
       if (profileData.target_level) {
         setTargetLevel(profileData.target_level);
@@ -49,8 +51,8 @@ export default function ProfilePage() {
       console.error("Failed to load profile data", e);
       // Auto-logout if token is invalid (401)
       if (e.response && e.response.status === 401) {
-          toast.error("Phiên đăng nhập hết hạn");
-          logout();
+        toast.error("Phiên đăng nhập hết hạn");
+        logout();
       }
     }
   };
@@ -59,7 +61,7 @@ export default function ProfilePage() {
   const handleUpdate = async () => {
     setLoading(true);
     try {
-      await userService.updateMe({ 
+      await userService.updateMe({
         full_name: fullName,
         daily_learning_goal: dailyGoal,
         learning_target: learningTarget,
@@ -83,7 +85,7 @@ export default function ProfilePage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <h1 className="text-3xl font-black text-gray-900">Hồ sơ cá nhân</h1>
             <div className="flex gap-2">
-               <button
+              <button
                 onClick={() => setIsEditing(!isEditing)}
                 className={`px-4 py-2 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${isEditing ? 'bg-red-50 text-red-500 border border-red-100' : 'bg-[#007bff] text-white shadow-md hover:bg-blue-600'}`}
               >

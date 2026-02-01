@@ -8,6 +8,7 @@ export default function AdminReportsPage() {
     const [stats, setStats] = useState<AdminStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [dateRange, setDateRange] = useState('30'); // days
+    const [dailyRevenue, setDailyRevenue] = useState<{ date: string, day_name: string, revenue: number }[]>([]);
 
     useEffect(() => {
         loadStats();
@@ -15,8 +16,12 @@ export default function AdminReportsPage() {
 
     const loadStats = async () => {
         try {
-            const data = await adminService.getStats();
-            setStats(data);
+            const [statsData, revenueData] = await Promise.all([
+                adminService.getStats(),
+                adminService.getRevenueStats()
+            ]);
+            setStats(statsData);
+            setDailyRevenue(revenueData.daily_breakdown || []);
         } catch (e) {
             console.error(e);
             toast.error("Lỗi tải dữ liệu thống kê");
@@ -36,11 +41,13 @@ export default function AdminReportsPage() {
     const adminsCount = totalUsers - learnersCount - mentorsCount;
     const newUsersThisMonth = stats?.users?.new_7d || 0;
     const totalRevenue = stats?.revenue?.total || 0;
-    const transactionsCount = 0; // Not directly available
     const speakingSessions = stats?.content?.sessions_total || 0;
     const topicsCount = stats?.content?.topics || 0;
     const scenariosCount = stats?.content?.scenarios || 0;
     const activeSubs = stats?.subscriptions?.active || 0;
+
+    // Calculate max revenue for chart scaling
+    const maxDailyRevenue = Math.max(...dailyRevenue.map(d => d.revenue), 1);
 
     return (
         <div className="p-8">
@@ -48,20 +55,6 @@ export default function AdminReportsPage() {
                 <div>
                     <h1 className="text-3xl font-black text-slate-900">Báo cáo & Thống kê</h1>
                     <p className="text-slate-500 mt-1">Phân tích chi tiết hoạt động hệ thống</p>
-                </div>
-                <div className="flex items-center gap-4">
-                    <select
-                        value={dateRange}
-                        onChange={e => setDateRange(e.target.value)}
-                        className="px-4 py-2 border rounded-xl font-medium"
-                    >
-                        <option value="7">7 ngày qua</option>
-                        <option value="30">30 ngày qua</option>
-                        <option value="90">90 ngày qua</option>
-                    </select>
-                    <button className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-indigo-700">
-                        <Download size={18} /> Xuất báo cáo
-                    </button>
                 </div>
             </div>
 
@@ -97,14 +90,27 @@ export default function AdminReportsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Revenue Chart */}
                 <div className="bg-white p-6 rounded-2xl border shadow-sm">
-                    <h3 className="font-bold text-slate-900 mb-4">Doanh thu theo thời gian</h3>
+                    <h3 className="font-bold text-slate-900 mb-4">Doanh thu 7 ngày gần nhất</h3>
                     <div className="h-64 flex items-end gap-2">
-                        {[40, 65, 45, 80, 55, 90, 75].map((h, i) => (
-                            <div key={i} className="flex-1 bg-gradient-to-t from-indigo-500 to-indigo-400 rounded-t-lg" style={{ height: `${h}%` }} />
-                        ))}
+                        {dailyRevenue.map((day, i) => {
+                            const heightPercent = maxDailyRevenue > 0 ? (day.revenue / maxDailyRevenue * 90) : 0;
+                            return (
+                                <div key={i} className="flex-1 flex flex-col items-center">
+                                    <span className="text-xs font-bold text-indigo-600 mb-1">
+                                        {day.revenue > 0 ? `${(day.revenue / 1000).toFixed(0)}k` : ''}
+                                    </span>
+                                    <div
+                                        className={`w-full rounded-t-lg transition-all ${day.revenue > 0 ? 'bg-gradient-to-t from-indigo-500 to-indigo-400' : 'bg-slate-200'}`}
+                                        style={{ height: `${heightPercent || 5}%`, minHeight: day.revenue > 0 ? '20px' : '4px' }}
+                                    />
+                                </div>
+                            );
+                        })}
                     </div>
                     <div className="flex justify-between mt-2 text-xs text-slate-400 font-medium">
-                        <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span>
+                        {dailyRevenue.map((day, i) => (
+                            <span key={i}>{day.date}</span>
+                        ))}
                     </div>
                 </div>
 
