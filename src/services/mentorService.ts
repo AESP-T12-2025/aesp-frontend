@@ -172,7 +172,7 @@ export const mentorService = {
     },
 
     /**
-     * Accept a booking request
+     * Accept a booking request (legacy)
      */
     acceptBooking: async (bookingId: number) => {
         const res = await api.post(`/mentors/bookings/${bookingId}/accept`);
@@ -184,6 +184,22 @@ export const mentorService = {
      */
     rejectBooking: async (bookingId: number, reason?: string) => {
         const res = await api.post(`/mentors/bookings/${bookingId}/reject`, { reason });
+        return res.data;
+    },
+
+    /**
+     * Confirm booking with meeting link (NEW)
+     */
+    confirmBooking: async (bookingId: number, meetingLink: string) => {
+        const res = await api.post(`/bookings/${bookingId}/confirm`, { meeting_link: meetingLink });
+        return res.data;
+    },
+
+    /**
+     * Mark booking as completed (NEW)
+     */
+    completeBooking: async (bookingId: number) => {
+        const res = await api.post(`/bookings/${bookingId}/complete`);
         return res.data;
     },
 
@@ -288,9 +304,23 @@ export const mentorService = {
     // ========================================================================
 
     /**
-     * Create assessment for booking
+     * Create assessment for booking (Enhanced)
      */
-    createAssessment: async (data: { booking_id: number; score: number; feedback: string; level_assigned?: string }) => {
+    createAssessment: async (data: {
+        booking_id: number;
+        score: number;
+        feedback: string;
+        level_assigned?: string;
+        pronunciation_score?: number;
+        grammar_score?: number;
+        vocabulary_score?: number;
+        fluency_score?: number;
+        pronunciation_notes?: string;
+        grammar_notes?: string;
+        vocabulary_tips?: string;
+        communication_tips?: string;
+        shared_resource_ids?: string;
+    }) => {
         const res = await api.post('/mentor/assessments', data);
         return res.data;
     },

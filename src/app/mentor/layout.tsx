@@ -28,13 +28,10 @@ export default function MentorLayout({
     const navigation = [
         { name: "Dashboard", href: "/mentor/profile", icon: LayoutDashboard },
         { name: "My Bookings", href: "/mentor/bookings", icon: BookOpen },
-        { name: "Sessions", href: "/mentor/sessions", icon: ClipboardList },
         { name: "Assessments", href: "/mentor/assessments", icon: Star },
         { name: "Chủ đề", href: "/mentor/topics", icon: BookOpen },
         { name: "Cộng đồng", href: "/mentor/community", icon: Users },
         { name: "Resources", href: "/mentor/resources", icon: FolderOpen },
-        { name: "Tips/Kinh nghiệm", href: "/mentor/tips", icon: Lightbulb },
-        { name: "History", href: "/mentor/history", icon: History },
         { name: "Availability", href: "/mentor/availability", icon: Calendar },
     ];
 
