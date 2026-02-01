@@ -108,7 +108,11 @@ export default function PeerPracticePage() {
         setStatus('connecting');
         setSearchTime(0);
 
-        const wsUrl = `ws://localhost:8000/peer/ws/${token}`;
+        // Use production URL or localhost based on environment
+        const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const wsProtocol = apiBase.startsWith('https') ? 'wss' : 'ws';
+        const wsHost = apiBase.replace(/^https?:\/\//, '');
+        const wsUrl = `${wsProtocol}://${wsHost}/peer/ws/${token}`;
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
@@ -453,8 +457,8 @@ export default function PeerPracticePage() {
                                     key={topic.id}
                                     onClick={() => setSelectedTopic(topic.id)}
                                     className={`p-4 rounded-2xl border-2 transition-all text-left ${selectedTopic === topic.id
-                                            ? 'border-purple-500 bg-purple-50 ring-2 ring-purple-200'
-                                            : `${topic.color} border-transparent`
+                                        ? 'border-purple-500 bg-purple-50 ring-2 ring-purple-200'
+                                        : `${topic.color} border-transparent`
                                         }`}
                                 >
                                     <div className="text-3xl mb-2">{topic.emoji}</div>
