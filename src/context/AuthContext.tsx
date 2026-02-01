@@ -28,6 +28,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
 
+    const logout = () => {
+        localStorage.removeItem("token");
+        setUser(null);
+        router.replace("/login");
+    };
+
     // Fetch user profile from backend using token
     const fetchUserProfile = async () => {
         try {
@@ -45,6 +51,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
             console.error("Failed to fetch user profile", error);
         }
+    };
+
+    const login = async (token: string) => {
+        localStorage.setItem("token", token);
+        await fetchUserProfile();
+    };
+
+    const refreshProfile = async () => {
+        await fetchUserProfile();
     };
 
     useEffect(() => {
@@ -66,21 +81,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             isMounted = false;
         };
     }, []);
-
-    const login = async (token: string) => {
-        localStorage.setItem("token", token);
-        await fetchUserProfile();
-    };
-
-    const logout = () => {
-        localStorage.removeItem("token");
-        setUser(null);
-        router.replace("/login");
-    };
-
-    const refreshProfile = async () => {
-        await fetchUserProfile();
-    };
 
     return (
         <AuthContext.Provider value={{ user, isLoading, login, logout, refreshProfile }}>
