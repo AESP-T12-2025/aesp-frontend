@@ -17,7 +17,7 @@ export default function LearningPathPage() {
             const data = await proficiencyService.getMyPath();
             setPath(data);
         } catch (e) {
-            console.error("Failed to load path");
+            console.error("Failed to load path:", e);
         } finally {
             setLoading(false);
         }
