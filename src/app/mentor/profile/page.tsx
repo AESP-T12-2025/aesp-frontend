@@ -2,13 +2,34 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { mentorService, MentorProfile } from '@/services/mentorService';
+import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { Loader2, Save, User, Award, Users, BookOpen } from 'lucide-react';
+
+interface MentorStats {
+    total_sessions: number;
+    avg_rating: number;
+    unique_learners: number;
+}
 
 export default function MentorProfilePage() {
     const { user } = useAuth();
     const [profile, setProfile] = useState<MentorProfile>({ full_name: '', bio: '', skills: '' });
     const [isSaving, setIsSaving] = useState(false);
+    const [stats, setStats] = useState<MentorStats>({ total_sessions: 0, avg_rating: 0, unique_learners: 0 });
+
+    useEffect(() => {
+        loadStats();
+    }, []);
+
+    const loadStats = async () => {
+        try {
+            const res = await api.get('/mentors/me/stats');
+            setStats(res.data);
+        } catch (e) {
+            console.error('Error loading stats:', e);
+        }
+    };
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -36,7 +57,7 @@ export default function MentorProfilePage() {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-bold text-gray-500 uppercase tracking-wide">Tổng buổi học</p>
-                            <p className="text-3xl font-black text-gray-900 mt-2">0</p>
+                            <p className="text-3xl font-black text-gray-900 mt-2">{stats.total_sessions}</p>
                         </div>
                         <div className="p-4 bg-blue-50 rounded-2xl">
                             <BookOpen className="w-8 h-8 text-[#007bff]" />
@@ -48,7 +69,7 @@ export default function MentorProfilePage() {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-bold text-gray-500 uppercase tracking-wide">Đánh giá TB</p>
-                            <p className="text-3xl font-black text-gray-900 mt-2">0.0</p>
+                            <p className="text-3xl font-black text-gray-900 mt-2">{stats.avg_rating.toFixed(1)}</p>
                         </div>
                         <div className="p-4 bg-yellow-50 rounded-2xl">
                             <Award className="w-8 h-8 text-yellow-600" />
@@ -60,7 +81,7 @@ export default function MentorProfilePage() {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-bold text-gray-500 uppercase tracking-wide">Học viên</p>
-                            <p className="text-3xl font-black text-gray-900 mt-2">0</p>
+                            <p className="text-3xl font-black text-gray-900 mt-2">{stats.unique_learners}</p>
                         </div>
                         <div className="p-4 bg-green-50 rounded-2xl">
                             <Users className="w-8 h-8 text-green-600" />

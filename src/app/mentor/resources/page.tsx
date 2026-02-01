@@ -12,7 +12,7 @@ export default function MentorResourcesPage() {
         title: '',
         description: '',
         file_url: '',
-        resource_type: 'DOCUMENT' as Resource['resource_type']
+        resource_type: 'document' as Resource['resource_type']
     });
     const [isCreating, setIsCreating] = useState(false);
 
@@ -87,7 +87,7 @@ export default function MentorResourcesPage() {
         try {
             await mentorService.createResource(formData);
             toast.success("Tạo tài liệu thành công!");
-            setFormData({ title: '', description: '', file_url: '', resource_type: 'DOCUMENT' });
+            setFormData({ title: '', description: '', file_url: '', resource_type: 'document' });
             setShowForm(false);
             loadResources();
         } catch (error) {
@@ -197,10 +197,9 @@ export default function MentorResourcesPage() {
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">Loại tài liệu</label>
                                 <select value={formData.resource_type} onChange={(e) => setFormData({ ...formData, resource_type: e.target.value as Resource['resource_type'] })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#007bff] font-medium">
-                                    <option value="DOCUMENT">Tài liệu</option>
-                                    <option value="VIDEO">Video</option>
-                                    <option value="AUDIO">Audio</option>
-                                    <option value="LINK">Link</option>
+                                    <option value="document">Tài liệu</option>
+                                    <option value="video">Video</option>
+                                    <option value="link">Link</option>
                                 </select>
                             </div>
                             <div>
