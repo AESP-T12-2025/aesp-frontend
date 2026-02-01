@@ -52,12 +52,12 @@ export default function ModerationPage() {
                     </div>
 
                     <div className="flex bg-white p-1 rounded-xl border border-gray-200">
-                        {['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map(s => (
+                        {['ALL', 'REPORTED', 'APPROVED', 'REJECTED'].map(s => (
                             <button
                                 key={s}
                                 onClick={() => setFilter(s)}
                                 className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filter === s ? 'bg-indigo-50 text-indigo-600' : 'text-gray-500 hover:text-gray-900'
-                                    }`}
+                                    } ${s === 'REPORTED' && filter !== s ? 'text-orange-500' : ''}`}
                             >
                                 {s}
                             </button>
@@ -76,8 +76,8 @@ export default function ModerationPage() {
                                     <div className="flex justify-between items-start mb-2">
                                         <h3 className="font-bold text-gray-900">{post.mentor_name}</h3>
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${post.status === 'APPROVED' ? 'bg-green-100 text-green-600' :
-                                                post.status === 'REJECTED' ? 'bg-red-100 text-red-600' :
-                                                    'bg-yellow-100 text-yellow-600'
+                                            post.status === 'REJECTED' ? 'bg-red-100 text-red-600' :
+                                                'bg-yellow-100 text-yellow-600'
                                             }`}>
                                             {post.status}
                                         </span>

@@ -163,6 +163,9 @@ export default function CommunityPage() {
 function SocialFeed() {
     const [posts, setPosts] = React.useState<any[]>([]);
     const [loading, setLoading] = React.useState(true);
+    const [expandedComments, setExpandedComments] = React.useState<number | null>(null);
+    const [comments, setComments] = React.useState<any[]>([]);
+    const [newComment, setNewComment] = React.useState('');
 
     React.useEffect(() => {
         loadFeed();
@@ -183,19 +186,61 @@ function SocialFeed() {
     const handleLike = async (postId: number) => {
         try {
             const { socialService } = await import('@/services/socialService');
-            await socialService.toggleLike(postId);
-            // Optimistic update
+            const result = await socialService.toggleLike(postId);
             setPosts(prev => prev.map(p => {
                 if (p.id === postId) {
-                    // Toggle logic helper (backend handles real toggle, frontend just increments/decrements locally for speed)
-                    // Since we don't know "is_liked" from backend list yet (simplified model), we just +1 for feedback
-                    return { ...p, like_count: p.like_count + 1 };
+                    const wasLiked = p.is_liked;
+                    return {
+                        ...p,
+                        is_liked: !wasLiked,
+                        like_count: wasLiked ? (p.like_count || 1) - 1 : (p.like_count || 0) + 1
+                    };
                 }
                 return p;
             }));
-            toast.success("Đã thả tim! ❤️");
         } catch (e) {
             toast.error("Lỗi tương tác");
+        }
+    };
+
+    const handleReport = async (postId: number) => {
+        if (!confirm("Bạn có chắc muốn báo cáo bài viết này vi phạm?")) return;
+        try {
+            const { socialService } = await import('@/services/socialService');
+            const result = await socialService.reportPost(postId);
+            toast.success(result.message || "Đã gửi báo cáo đến Admin!");
+        } catch (e) {
+            toast.error("Lỗi khi gửi báo cáo");
+        }
+    };
+
+    const handleToggleComments = async (postId: number) => {
+        if (expandedComments === postId) {
+            setExpandedComments(null);
+            setComments([]);
+        } else {
+            setExpandedComments(postId);
+            try {
+                const { socialService } = await import('@/services/socialService');
+                const data = await socialService.getComments(postId);
+                setComments(data);
+            } catch (e) {
+                toast.error("Không thể tải bình luận");
+            }
+        }
+    };
+
+    const handleAddComment = async (postId: number) => {
+        if (!newComment.trim()) return;
+        try {
+            const { socialService } = await import('@/services/socialService');
+            const comment = await socialService.addComment(postId, newComment);
+            setComments([...comments, comment]);
+            setNewComment('');
+            toast.success("Đã bình luận!");
+            setPosts(prev => prev.map(p => p.id === postId ? { ...p, comment_count: (p.comment_count || 0) + 1 } : p));
+        } catch (e) {
+            toast.error("Lỗi khi bình luận");
         }
     };
 
@@ -206,14 +251,23 @@ function SocialFeed() {
         <div className="space-y-6">
             {posts.map(post => (
                 <div key={post.id} className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm">
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center font-black text-indigo-600">
-                            {post.mentor_name.charAt(0)}
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center font-black text-indigo-600">
+                                {post.mentor_name?.charAt(0) || 'M'}
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-slate-900">{post.mentor_name}</h4>
+                                <span className="text-xs font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md">MENTOR</span>
+                            </div>
                         </div>
-                        <div>
-                            <h4 className="font-bold text-slate-900">{post.mentor_name}</h4>
-                            <span className="text-xs font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md">MENTOR</span>
-                        </div>
+                        <button
+                            onClick={() => handleReport(post.id)}
+                            className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
+                            title="Báo cáo vi phạm"
+                        >
+                            🚩
+                        </button>
                     </div>
                     {post.image_url && (
                         <div className="mb-4 rounded-xl overflow-hidden">
@@ -225,17 +279,48 @@ function SocialFeed() {
                     <div className="flex items-center gap-6 pt-4 border-t border-slate-50">
                         <button
                             onClick={() => handleLike(post.id)}
-                            className="flex items-center gap-2 text-slate-500 hover:text-red-500 font-bold text-sm transition-colors"
+                            className={`flex items-center gap-2 font-bold text-sm transition-colors ${post.is_liked
+                                ? 'text-red-500'
+                                : 'text-slate-500 hover:text-red-500'
+                                }`}
                         >
-                            <span>❤️</span> {post.like_count}
+                            <span>{post.is_liked ? '❤️' : '🤍'}</span> {post.like_count || 0}
                         </button>
                         <button
-                            onClick={() => toast("Tính năng bình luận đang bảo trì", { icon: '🚧' })}
+                            onClick={() => handleToggleComments(post.id)}
                             className="flex items-center gap-2 text-slate-500 hover:text-indigo-500 font-bold text-sm transition-colors"
                         >
-                            <span>💬</span> {post.comment_count} Bình luận
+                            <span>💬</span> {post.comment_count || 0} Bình luận
                         </button>
                     </div>
+
+                    {/* Comments Section */}
+                    {expandedComments === post.id && (
+                        <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
+                            {comments.length === 0 && <p className="text-slate-400 text-sm">Chưa có bình luận.</p>}
+                            {comments.map((c: any, index: number) => (
+                                <div key={c.comment_id || c.id || `comment-${index}`} className="bg-slate-50 p-3 rounded-xl">
+                                    <span className="font-bold text-slate-700 text-sm">{c.user_name || 'Ẩn danh'}</span>
+                                    <p className="text-slate-600 text-sm">{c.content}</p>
+                                </div>
+                            ))}
+                            <div className="flex gap-2 mt-2">
+                                <input
+                                    type="text"
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    placeholder="Viết bình luận..."
+                                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-100"
+                                />
+                                <button
+                                    onClick={() => handleAddComment(post.id)}
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700"
+                                >
+                                    Gửi
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             ))}
         </div>

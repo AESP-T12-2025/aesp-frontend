@@ -10,7 +10,8 @@ import {
     FolderOpen,
     History,
     Star,
-    Lightbulb
+    Lightbulb,
+    Users
 } from "lucide-react";
 import clsx from "clsx";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -30,6 +31,7 @@ export default function MentorLayout({
         { name: "Sessions", href: "/mentor/sessions", icon: ClipboardList },
         { name: "Assessments", href: "/mentor/assessments", icon: Star },
         { name: "Chủ đề", href: "/mentor/topics", icon: BookOpen },
+        { name: "Cộng đồng", href: "/mentor/community", icon: Users },
         { name: "Resources", href: "/mentor/resources", icon: FolderOpen },
         { name: "Tips/Kinh nghiệm", href: "/mentor/tips", icon: Lightbulb },
         { name: "History", href: "/mentor/history", icon: History },
@@ -77,8 +79,28 @@ export default function MentorLayout({
                 </aside>
 
                 {/* Main Content */}
-                <main className="flex-1 overflow-y-auto p-8">
-                    {children}
+                <main className="flex-1 overflow-y-auto p-8 flex flex-col">
+                    <div className="flex-1">
+                        {children}
+                    </div>
+
+                    {/* FOOTER */}
+                    <footer className="mt-12 py-8 border-t border-gray-100 text-center">
+                        <p className="text-gray-400 text-xs mb-3 font-medium">
+                            © 2025 AI English Speaking Platform
+                        </p>
+                        <div className="flex justify-center gap-6">
+                            <Link href="/policies/terms" className="text-xs font-bold text-gray-400 hover:text-indigo-600 transition-colors tracking-wide uppercase">
+                                Điều khoản
+                            </Link>
+                            <Link href="/policies/privacy" className="text-xs font-bold text-gray-400 hover:text-indigo-600 transition-colors tracking-wide uppercase">
+                                Bảo mật
+                            </Link>
+                            <Link href="/policies/refund" className="text-xs font-bold text-gray-400 hover:text-indigo-600 transition-colors tracking-wide uppercase">
+                                Hoàn tiền
+                            </Link>
+                        </div>
+                    </footer>
                 </main>
             </div>
         </ProtectedRoute>

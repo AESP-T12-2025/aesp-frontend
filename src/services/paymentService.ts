@@ -51,7 +51,7 @@ export const paymentService = {
 
     // Upgrade/downgrade
     upgradeSubscription: async (newPackageId: number) => {
-        const res = await api.post('/payment/upgrade', { package_id: newPackageId });
+        const res = await api.post(`/payment/upgrade?package_id=${newPackageId}`);
         return res.data;
     },
     cancelSubscription: async () => {

@@ -56,6 +56,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
     { name: 'Thành tựu', href: '/learner/achievements', icon: '🏆' },
     { name: 'Báo cáo', href: '/learner/reports', icon: '📈' },
     { name: 'Subscription', href: '/learner/subscription', icon: '💎' },
+    { name: 'Hỗ trợ', href: '/learner/support', icon: '🆘' },
     { name: 'Hồ sơ', href: '/profile', icon: '👤' },
   ];
 
@@ -103,7 +104,7 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
         <div className="flex-1 ml-64 flex flex-col min-h-screen">
 
           {/* 2. HEADER - Tích hợp Search và Profile xịn */}
-          <header className="h-16 bg-white border-b border-gray-200 sticky top-0 z-10 px-8 flex items-center justify-between shadow-sm">
+          <header className="h-16 bg-white border-b border-gray-200 sticky top-0 z-40 px-8 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-8 flex-1">
               {/* Breadcrumb */}
               <div className="flex items-center gap-2 text-sm whitespace-nowrap">
@@ -120,6 +121,14 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
                   type="text"
                   placeholder="Tìm kiếm kịch bản luyện tập..."
                   className="bg-transparent border-none outline-none ml-2 text-sm w-full text-gray-600 placeholder-gray-400"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const target = e.target as HTMLInputElement;
+                      if (target.value.trim()) {
+                        window.location.href = `/learner/scenarios?q=${encodeURIComponent(target.value)}`;
+                      }
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -164,15 +173,18 @@ export default function LearnerLayout({ children }: { children: React.ReactNode 
                 © 2025 AI English Speaking Platform
               </p>
               <div className="flex justify-center gap-8">
-                {['Giới thiệu', 'Điều khoản', 'Chính sách', 'Hỗ trợ'].map((link) => (
-                  <Link
-                    key={link}
-                    href="#"
-                    className="text-xs font-bold text-gray-400 hover:text-indigo-600 transition-colors tracking-wide uppercase"
-                  >
-                    {link}
-                  </Link>
-                ))}
+                <Link href="/policies/terms" className="text-xs font-bold text-gray-400 hover:text-indigo-600 transition-colors tracking-wide uppercase">
+                  Điều khoản
+                </Link>
+                <Link href="/policies/privacy" className="text-xs font-bold text-gray-400 hover:text-indigo-600 transition-colors tracking-wide uppercase">
+                  Bảo mật
+                </Link>
+                <Link href="/policies/refund" className="text-xs font-bold text-gray-400 hover:text-indigo-600 transition-colors tracking-wide uppercase">
+                  Hoàn tiền
+                </Link>
+                <Link href="/learner/support" className="text-xs font-bold text-gray-400 hover:text-indigo-600 transition-colors tracking-wide uppercase">
+                  Hỗ trợ
+                </Link>
               </div>
             </div>
           </footer>

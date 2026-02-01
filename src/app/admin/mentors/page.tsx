@@ -2,11 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { mentorService, MentorProfile } from '@/services/mentorService';
+import { adminService } from '@/services/adminService'; // Import adminService
 import toast from 'react-hot-toast';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 export default function AdminMentorsPage() {
-    const [mentors, setMentors] = useState<MentorProfile[]>([]);
+    const [mentors, setMentors] = useState<any[]>([]); // Use any[] or shared Mentor type
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -15,7 +16,8 @@ export default function AdminMentorsPage() {
 
     const loadMentors = async () => {
         try {
-            const data = await mentorService.getAllMentors();
+            // Use adminService to get ALL mentors (including PENDING)
+            const data = await adminService.listMentors();
             setMentors(data);
         } catch (error) {
             toast.error("Lỗi tải danh sách Mentor");
@@ -62,8 +64,8 @@ export default function AdminMentorsPage() {
                                             <td className="p-4 text-gray-500">{mentor.skills}</td>
                                             <td className="p-4">
                                                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${mentor.verification_status === 'VERIFIED'
-                                                        ? 'bg-green-100 text-green-600'
-                                                        : 'bg-yellow-100 text-yellow-600'
+                                                    ? 'bg-green-100 text-green-600'
+                                                    : 'bg-yellow-100 text-yellow-600'
                                                     }`}>
                                                     {mentor.verification_status}
                                                 </span>
