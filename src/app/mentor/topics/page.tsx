@@ -33,7 +33,7 @@ export default function MentorTopicsPage() {
 
     // Create topic
     const [showCreateForm, setShowCreateForm] = useState(false);
-    const [newTopic, setNewTopic] = useState({ name: '', description: '', difficulty_level: 'GENERAL' });
+    const [newTopic, setNewTopic] = useState({ name: '', description: '', category_id: 1 });
     const [creating, setCreating] = useState(false);
 
     useEffect(() => {
@@ -116,7 +116,7 @@ export default function MentorTopicsPage() {
         try {
             await topicService.create(newTopic);
             toast.success("Tạo chủ đề thành công!");
-            setNewTopic({ name: '', description: '', difficulty_level: 'GENERAL' });
+            setNewTopic({ name: '', description: '', category_id: 1 });
             setShowCreateForm(false);
             loadTopics();
         } catch (e) {
