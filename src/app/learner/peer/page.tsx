@@ -244,12 +244,22 @@ export default function PeerPracticePage() {
     const createPeerConnection = () => {
         const config: RTCConfiguration = {
             iceServers: [
-                // STUN servers
+                // Google STUN servers (always free and reliable)
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
                 { urls: 'stun:stun2.l.google.com:19302' },
-                { urls: 'stun:stun3.l.google.com:19302' },
-                // OpenRelay Project - Free TURN servers
+                // ExpressTURN.com - 1000GB free traffic per month
+                {
+                    urls: 'turn:relay1.expressturn.com:3478',
+                    username: 'efZYS7PJMXLFADR8HG',
+                    credential: 'EfBGP1x8Kj4V0bQn'
+                },
+                {
+                    urls: 'turn:relay1.expressturn.com:3478?transport=tcp',
+                    username: 'efZYS7PJMXLFADR8HG',
+                    credential: 'EfBGP1x8Kj4V0bQn'
+                },
+                // Metered.ca OpenRelay (20GB/month free)
                 {
                     urls: 'turn:openrelay.metered.ca:80',
                     username: 'openrelayproject',
@@ -261,20 +271,13 @@ export default function PeerPracticePage() {
                     credential: 'openrelayproject'
                 },
                 {
-                    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                    urls: 'turns:openrelay.metered.ca:443?transport=tcp',
                     username: 'openrelayproject',
                     credential: 'openrelayproject'
-                },
-                // Backup - Twilio-style test servers
-                {
-                    urls: 'turn:numb.viagenie.ca',
-                    username: 'webrtc@live.com',
-                    credential: 'muazkh'
                 }
             ],
             iceCandidatePoolSize: 10,
-            // Force relay for testing NAT traversal issues
-            // Change to 'all' if you want to try direct connection first
+            // Use 'relay' to force TURN (for testing) or 'all' for production
             iceTransportPolicy: 'all'
         };
 
