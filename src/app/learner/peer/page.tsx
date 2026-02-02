@@ -247,31 +247,34 @@ export default function PeerPracticePage() {
                 // STUN servers
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun.relay.metered.ca:80' },
-                // Metered.ca Free TURN servers (more reliable)
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                // OpenRelay Project - Free TURN servers
                 {
-                    urls: 'turn:a.relay.metered.ca:80',
-                    username: 'e8dd65d92ae757e45648c815',
-                    credential: '2sPuHjT4Y+VmhLWn'
+                    urls: 'turn:openrelay.metered.ca:80',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
                 },
                 {
-                    urls: 'turn:a.relay.metered.ca:80?transport=tcp',
-                    username: 'e8dd65d92ae757e45648c815',
-                    credential: '2sPuHjT4Y+VmhLWn'
+                    urls: 'turn:openrelay.metered.ca:443',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
                 },
                 {
-                    urls: 'turn:a.relay.metered.ca:443',
-                    username: 'e8dd65d92ae757e45648c815',
-                    credential: '2sPuHjT4Y+VmhLWn'
+                    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
                 },
+                // Backup - Twilio-style test servers
                 {
-                    urls: 'turns:a.relay.metered.ca:443?transport=tcp',
-                    username: 'e8dd65d92ae757e45648c815',
-                    credential: '2sPuHjT4Y+VmhLWn'
+                    urls: 'turn:numb.viagenie.ca',
+                    username: 'webrtc@live.com',
+                    credential: 'muazkh'
                 }
             ],
             iceCandidatePoolSize: 10,
-            // Try relay candidates first for better connectivity
+            // Force relay for testing NAT traversal issues
+            // Change to 'all' if you want to try direct connection first
             iceTransportPolicy: 'all'
         };
 
