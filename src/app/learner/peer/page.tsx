@@ -242,21 +242,29 @@ export default function PeerPracticePage() {
     // =========================================================================
 
     const createPeerConnection = () => {
-        // Simplified config like working version b6fd4b1
+        // Metered.ca TURN servers with registered credentials
         const config: RTCConfiguration = {
             iceServers: [
-                // Google STUN - always works
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                // Single reliable TURN for NAT traversal
+                { urls: 'stun:stun.relay.metered.ca:80' },
                 {
-                    urls: [
-                        'turn:openrelay.metered.ca:80',
-                        'turn:openrelay.metered.ca:443',
-                        'turn:openrelay.metered.ca:443?transport=tcp'
-                    ],
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
+                    urls: 'turn:global.relay.metered.ca:80',
+                    username: '576548a2cec70274bd29cdcc',
+                    credential: 'uztFAsur9AT8r7ii'
+                },
+                {
+                    urls: 'turn:global.relay.metered.ca:80?transport=tcp',
+                    username: '576548a2cec70274bd29cdcc',
+                    credential: 'uztFAsur9AT8r7ii'
+                },
+                {
+                    urls: 'turn:global.relay.metered.ca:443',
+                    username: '576548a2cec70274bd29cdcc',
+                    credential: 'uztFAsur9AT8r7ii'
+                },
+                {
+                    urls: 'turns:global.relay.metered.ca:443?transport=tcp',
+                    username: '576548a2cec70274bd29cdcc',
+                    credential: 'uztFAsur9AT8r7ii'
                 }
             ]
         };
