@@ -55,6 +55,7 @@ export default function PeerPracticePage() {
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
     const localStreamRef = useRef<MediaStream | null>(null);
     const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+    const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -88,6 +89,7 @@ export default function PeerPracticePage() {
             peerConnectionRef.current.close();
             peerConnectionRef.current = null;
         }
+        pendingCandidatesRef.current = [];
         setVoiceStatus('idle');
         setIsMuted(false);
     };
@@ -243,14 +245,33 @@ export default function PeerPracticePage() {
         const config: RTCConfiguration = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-            ]
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                // Free TURN servers from OpenRelay
+                {
+                    urls: 'turn:openrelay.metered.ca:80',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                {
+                    urls: 'turn:openrelay.metered.ca:443',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                {
+                    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                }
+            ],
+            iceCandidatePoolSize: 10
         };
 
         const pc = new RTCPeerConnection(config);
 
         pc.onicecandidate = (event) => {
             if (event.candidate) {
+                console.log('📤 Sending ICE candidate:', event.candidate.type);
                 sendWsMessage({
                     type: 'ice-candidate',
                     data: event.candidate.toJSON()
@@ -258,16 +279,37 @@ export default function PeerPracticePage() {
             }
         };
 
+        pc.onicegatheringstatechange = () => {
+            console.log('🧊 ICE gathering state:', pc.iceGatheringState);
+        };
+
+        pc.oniceconnectionstatechange = () => {
+            console.log('🔌 ICE connection state:', pc.iceConnectionState);
+            if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+                setVoiceStatus('active');
+                toast.success("🎙️ Voice chat đã kết nối!");
+            } else if (pc.iceConnectionState === 'failed') {
+                toast.error("Không thể kết nối voice chat. Vui lòng thử lại.");
+                cleanupVoice();
+            } else if (pc.iceConnectionState === 'disconnected') {
+                toast("Voice chat bị gián đoạn...", { icon: '⚠️' });
+            }
+        };
+
         pc.ontrack = (event) => {
+            console.log('🎵 Received remote track:', event.track.kind);
             if (remoteAudioRef.current && event.streams[0]) {
                 remoteAudioRef.current.srcObject = event.streams[0];
+                remoteAudioRef.current.play().catch(err => {
+                    console.error('Audio play error:', err);
+                });
             }
         };
 
         pc.onconnectionstatechange = () => {
+            console.log('📶 Connection state:', pc.connectionState);
             if (pc.connectionState === 'connected') {
                 setVoiceStatus('active');
-                toast.success("🎙️ Voice chat đã kết nối!");
             } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
                 cleanupVoice();
             }
@@ -310,23 +352,38 @@ export default function PeerPracticePage() {
     };
 
     const handleOffer = async (offer: RTCSessionDescriptionInit) => {
+        console.log('📥 Received offer, processing...');
         try {
-            if (!peerConnectionRef.current) {
+            let pc = peerConnectionRef.current;
+
+            // If no peer connection exists, create one (shouldn't happen normally)
+            if (!pc) {
+                console.log('⚠️ No existing PC, creating new one for offer');
                 setVoiceStatus('connecting');
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                 localStreamRef.current = stream;
 
-                const pc = createPeerConnection();
+                pc = createPeerConnection();
                 peerConnectionRef.current = pc;
 
                 stream.getTracks().forEach(track => {
-                    pc.addTrack(track, stream);
+                    pc!.addTrack(track, stream);
                 });
             }
 
-            const pc = peerConnectionRef.current!;
+            console.log('📝 Setting remote description (offer)');
             await pc.setRemoteDescription(new RTCSessionDescription(offer));
 
+            // Process any queued ICE candidates
+            if (pendingCandidatesRef.current.length > 0) {
+                console.log(`📦 Processing ${pendingCandidatesRef.current.length} queued ICE candidates`);
+                for (const candidate of pendingCandidatesRef.current) {
+                    await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                }
+                pendingCandidatesRef.current = [];
+            }
+
+            console.log('📤 Creating and sending answer');
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
 
@@ -334,6 +391,7 @@ export default function PeerPracticePage() {
                 type: 'answer',
                 data: answer
             });
+            console.log('✅ Answer sent');
         } catch (err) {
             console.error("Handle offer error:", err);
             cleanupVoice();
@@ -341,10 +399,24 @@ export default function PeerPracticePage() {
     };
 
     const handleAnswer = async (answer: RTCSessionDescriptionInit) => {
+        console.log('📥 Received answer');
         try {
             const pc = peerConnectionRef.current;
             if (pc) {
+                console.log('📝 Setting remote description (answer)');
                 await pc.setRemoteDescription(new RTCSessionDescription(answer));
+                console.log('✅ Remote description set');
+
+                // Process any queued ICE candidates
+                if (pendingCandidatesRef.current.length > 0) {
+                    console.log(`📦 Processing ${pendingCandidatesRef.current.length} queued ICE candidates`);
+                    for (const candidate of pendingCandidatesRef.current) {
+                        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                    }
+                    pendingCandidatesRef.current = [];
+                }
+            } else {
+                console.error('❌ No peer connection for answer');
             }
         } catch (err) {
             console.error("Handle answer error:", err);
@@ -352,10 +424,16 @@ export default function PeerPracticePage() {
     };
 
     const handleIceCandidate = async (candidate: RTCIceCandidateInit) => {
+        console.log('📥 Received ICE candidate');
         try {
             const pc = peerConnectionRef.current;
-            if (pc) {
+            if (pc && pc.remoteDescription) {
                 await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                console.log('✅ ICE candidate added');
+            } else {
+                console.log('⏳ Queuing ICE candidate (no remote description yet)');
+                // Queue the candidate for later
+                pendingCandidatesRef.current.push(candidate);
             }
         } catch (err) {
             console.error("Handle ICE candidate error:", err);
