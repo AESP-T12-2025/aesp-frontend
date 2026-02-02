@@ -242,43 +242,23 @@ export default function PeerPracticePage() {
     // =========================================================================
 
     const createPeerConnection = () => {
+        // Simplified config like working version b6fd4b1
         const config: RTCConfiguration = {
             iceServers: [
-                // Google STUN servers (always free and reliable)
+                // Google STUN - always works
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                // ExpressTURN.com - 1000GB free traffic per month
+                // Single reliable TURN for NAT traversal
                 {
-                    urls: 'turn:relay1.expressturn.com:3478',
-                    username: 'efZYS7PJMXLFADR8HG',
-                    credential: 'EfBGP1x8Kj4V0bQn'
-                },
-                {
-                    urls: 'turn:relay1.expressturn.com:3478?transport=tcp',
-                    username: 'efZYS7PJMXLFADR8HG',
-                    credential: 'EfBGP1x8Kj4V0bQn'
-                },
-                // Metered.ca OpenRelay (20GB/month free)
-                {
-                    urls: 'turn:openrelay.metered.ca:80',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                {
-                    urls: 'turn:openrelay.metered.ca:443',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                {
-                    urls: 'turns:openrelay.metered.ca:443?transport=tcp',
+                    urls: [
+                        'turn:openrelay.metered.ca:80',
+                        'turn:openrelay.metered.ca:443',
+                        'turn:openrelay.metered.ca:443?transport=tcp'
+                    ],
                     username: 'openrelayproject',
                     credential: 'openrelayproject'
                 }
-            ],
-            iceCandidatePoolSize: 10,
-            // Use 'relay' to force TURN (for testing) or 'all' for production
-            iceTransportPolicy: 'all'
+            ]
         };
 
         const pc = new RTCPeerConnection(config);
