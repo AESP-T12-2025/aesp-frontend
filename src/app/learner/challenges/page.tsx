@@ -28,32 +28,34 @@ export default function ChallengesPage() {
 
     const loadChallenges = async () => {
         try {
-            // Fetch real challenges from backend
-            const [challengesData, progressData] = await Promise.all([
+            // Fetch challenges and user stats for consistent data
+            const [challengesData, progressData, userStats] = await Promise.all([
                 gamificationService.getChallenges(),
-                gamificationService.getMyProgress()
+                gamificationService.getMyProgress(),
+                import('@/services/userService').then(m => m.userService.getStats())
             ]);
 
             // Map backend data to our Challenge interface
-            const mappedChallenges = (challengesData || []).map((c: any) => ({
-                id: c.challenge_id || c.id,
-                title: c.title || c.name,
+            const mappedChallenges = (progressData || []).map((c: any) => ({
+                id: c.id,
+                title: c.title,
                 description: c.description,
-                xp_reward: c.points_reward || c.xp_reward || 0,
-                type: c.challenge_type?.toLowerCase() || c.type || 'daily',
+                xp_reward: c.points || 0,
+                type: 'daily', // Default type since backend doesn't return type
                 progress: c.progress || 0,
-                target: c.target || 1,
-                completed: c.completed || c.status === 'COMPLETED',
-                expires_at: c.end_date || c.expires_at
+                target: 100, // Progress is already percentage
+                completed: c.unlocked || false,
+                expires_at: null
             }));
 
             setChallenges(mappedChallenges);
 
-            // Set stats from progress data
+            // Set stats from userService (same source as Achievements page)
+            const completedCount = mappedChallenges.filter((c: any) => c.completed).length;
             setStats({
-                totalCompleted: progressData?.challenges_completed || progressData?.total_completed || 0,
-                totalXP: progressData?.total_xp || progressData?.xp || 0,
-                currentStreak: progressData?.streak || progressData?.current_streak || 0
+                totalCompleted: completedCount,
+                totalXP: userStats?.xp || 0,
+                currentStreak: userStats?.streak || 0
             });
         } catch (e) {
             console.error("Error loading challenges:", e);
