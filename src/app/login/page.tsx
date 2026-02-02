@@ -1,12 +1,12 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Eye, EyeOff, Loader2, Mail, Lock } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -158,3 +158,14 @@ export default function LoginPage() {
   );
 }
 
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-gray-50">
+        <Loader2 className="animate-spin text-[#007bff]" size={40} />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
+  );
+}
