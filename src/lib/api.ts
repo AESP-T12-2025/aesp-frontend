@@ -1,7 +1,10 @@
 import axios from "axios";
 
-// Default to localhost:8000 if not specified in env
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
+// API URL priority:
+// 1. NEXT_PUBLIC_API_URL env variable (if set)
+// 2. Production backend URL (default for Vercel)
+// Note: For local dev, create .env.local with NEXT_PUBLIC_API_URL=http://localhost:8000
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://aesp-backend.onrender.com";
 
 const api = axios.create({
     baseURL: API_URL,
@@ -12,7 +15,7 @@ const api = axios.create({
 
 // Debug logging only in development
 if (process.env.NODE_ENV === 'development') {
-    // console.log("Current API URL:", API_URL);
+    console.log("🔗 API URL:", API_URL);
 }
 
 // Add interceptor to include token if available (Week 1 placeholder)

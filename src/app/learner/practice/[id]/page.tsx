@@ -6,7 +6,7 @@ import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import {
   Loader2, ArrowLeft, Mic, MicOff, Send, Volume2,
-  BookOpen, MessageCircle, Zap, Clock, RotateCcw
+  BookOpen, MessageCircle, Zap, Clock, RotateCcw, CheckCircle
 } from 'lucide-react';
 
 interface Message {
@@ -28,7 +28,20 @@ export default function PracticePage() {
   const [sending, setSending] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [sessionStartTime] = useState(new Date());
+  const [elapsedTime, setElapsedTime] = useState('0:00');
   const [vocabulary, setVocabulary] = useState<string[]>([]);
+
+  // Session management states
+  const [sessionId, setSessionId] = useState<number | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
+  const [sessionSummary, setSessionSummary] = useState<{
+    session_id: number;
+    score: number;
+    duration_minutes: number;
+    messages_count: number;
+    xp_earned: number;
+  } | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -54,6 +67,18 @@ export default function PracticePage() {
         // Vocab might not exist
       }
 
+      // Start a new practice session
+      try {
+        const sessionRes = await api.post('/ai/session/start', {
+          scenario_id: parseInt(scenarioId)
+        });
+        setSessionId(sessionRes.data.session_id);
+        console.log('Started session:', sessionRes.data.session_id);
+      } catch (err) {
+        console.error('Failed to start session:', err);
+        // Continue anyway, but session won't be tracked
+      }
+
       // Add initial AI greeting
       setMessages([{
         id: 1,
@@ -68,6 +93,18 @@ export default function PracticePage() {
       setLoading(false);
     }
   };
+
+  // Live timer - update every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const diff = Math.floor((new Date().getTime() - sessionStartTime.getTime()) / 1000);
+      const mins = Math.floor(diff / 60);
+      const secs = diff % 60;
+      setElapsedTime(`${mins}:${secs.toString().padStart(2, '0')}`);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [sessionStartTime]);
 
   const sendMessage = async () => {
     if (!inputText.trim() || sending) return;
@@ -125,7 +162,7 @@ export default function PracticePage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const [mimeType, setMimeType] = useState('');
-  
+
   // Web Speech API for real-time speech recognition
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
@@ -133,17 +170,17 @@ export default function PracticePage() {
   useEffect(() => {
     // Check if browser supports Speech Recognition
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    
+
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
-      
+
       recognition.onresult = (event: SpeechRecognitionEvent) => {
         let interimTranscript = '';
         let finalTranscript = '';
-        
+
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
@@ -152,14 +189,14 @@ export default function PracticePage() {
             interimTranscript += transcript;
           }
         }
-        
+
         // Update input with final + interim results
         if (finalTranscript) {
           setInputText(prev => prev + finalTranscript);
         }
         // Show interim results in real-time (optional: you can show in a separate state)
       };
-      
+
       recognition.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
         if (event.error === 'not-allowed') {
@@ -169,7 +206,7 @@ export default function PracticePage() {
         }
         setIsRecording(false);
       };
-      
+
       recognition.onend = () => {
         if (isRecording) {
           // Restart if still recording (handles continuous recognition)
@@ -180,10 +217,10 @@ export default function PracticePage() {
           }
         }
       };
-      
+
       recognitionRef.current = recognition;
     }
-    
+
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.abort();
@@ -205,11 +242,11 @@ export default function PracticePage() {
       toast.error('Trình duyệt không hỗ trợ nhận diện giọng nói');
       return;
     }
-    
+
     try {
       // Request microphone permission first
       await navigator.mediaDevices.getUserMedia({ audio: true });
-      
+
       recognitionRef.current.start();
       setIsRecording(true);
       toast.success("🎤 Đang nghe... Hãy nói tiếng Anh!");
@@ -236,10 +273,10 @@ export default function PracticePage() {
       reader.readAsDataURL(blob);
       reader.onloadend = async () => {
         const base64Audio = (reader.result as string).split(',')[1];
-        
+
         // Extract extension from mime type (e.g., 'audio/webm' -> 'webm')
         const extension = type.split('/')[1]?.split(';')[0] || 'webm';
-        
+
         const response = await api.post('/ai/stt', {
           audio_data: base64Audio,
           format: extension,
@@ -267,10 +304,10 @@ export default function PracticePage() {
       const audioUrl = response.data.audio_url;
       if (audioUrl) {
         // Handle path if it's relative
-        const fullUrl = audioUrl.startsWith('http') 
-          ? audioUrl 
+        const fullUrl = audioUrl.startsWith('http')
+          ? audioUrl
           : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${audioUrl}`;
-        
+
         const audio = new Audio(fullUrl);
         audio.play();
       }
@@ -297,6 +334,30 @@ export default function PracticePage() {
     const mins = Math.floor(diff / 60);
     const secs = diff % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const completeSession = async () => {
+    if (!sessionId) {
+      toast.error("Không tìm thấy session");
+      router.push('/learner/scenarios');
+      return;
+    }
+
+    try {
+      const userMessages = messages.filter(m => m.role === 'user').length;
+      const res = await api.post('/ai/session/complete', {
+        session_id: sessionId,
+        messages_count: userMessages
+      });
+
+      setSessionSummary(res.data);
+      setShowSummary(true);
+      setShowConfirmDialog(false);
+      toast.success("🎉 Đã hoàn thành bài học!");
+    } catch (err: any) {
+      console.error('Complete session error:', err);
+      toast.error(err.response?.data?.detail || "Không thể hoàn thành bài học");
+    }
   };
 
   if (loading) {
@@ -337,17 +398,25 @@ export default function PracticePage() {
                   {scenario.difficulty_level}
                 </span>
                 <span className="flex items-center gap-1">
-                  <Clock size={14} /> {getElapsedTime()}
+                  <Clock size={14} /> {elapsedTime}
                 </span>
               </div>
             </div>
           </div>
-          <button
-            onClick={resetConversation}
-            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition"
-          >
-            <RotateCcw size={16} /> Reset
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowConfirmDialog(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-xl transition"
+            >
+              <CheckCircle size={16} /> Kết thúc
+            </button>
+            <button
+              onClick={resetConversation}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl transition"
+            >
+              <RotateCcw size={16} /> Reset
+            </button>
+          </div>
         </div>
       </div>
 
@@ -361,13 +430,13 @@ export default function PracticePage() {
               {messages.map(msg => (
                 <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] p-4 rounded-2xl ${msg.role === 'user'
-                      ? 'bg-green-600 text-white rounded-br-md'
-                      : 'bg-gray-100 text-gray-800 rounded-bl-md'
+                    ? 'bg-green-600 text-white rounded-br-md'
+                    : 'bg-gray-100 text-gray-800 rounded-bl-md'
                     }`}>
                     <div className="flex items-center justify-between gap-2">
                       <p className="whitespace-pre-wrap flex-1">{msg.content}</p>
                       {msg.role === 'ai' && (
-                        <button 
+                        <button
                           onClick={() => playMessage(msg.content)}
                           className="p-1.5 hover:bg-white/20 rounded-lg transition-colors flex-shrink-0"
                           title="Phát âm"
@@ -398,8 +467,8 @@ export default function PracticePage() {
                 <button
                   onClick={toggleRecording}
                   className={`p-3 rounded-xl transition ${isRecording
-                      ? 'bg-red-500 text-white animate-pulse'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-red-500 text-white animate-pulse'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                 >
                   {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
@@ -465,6 +534,70 @@ export default function PracticePage() {
           </div>
         </div>
       </div>
+
+      {/* Confirm Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-sm mx-4 shadow-xl">
+            <h3 className="font-bold text-lg text-gray-900 mb-2">Kết thúc bài học?</h3>
+            <p className="text-gray-600 text-sm mb-6">
+              Bạn đã gửi {messages.filter(m => m.role === 'user').length} tin nhắn trong phiên luyện tập này.
+              Kết quả sẽ được lưu vào lịch sử học tập của bạn.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirmDialog(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition"
+              >
+                Tiếp tục học
+              </button>
+              <button
+                onClick={completeSession}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition"
+              >
+                Hoàn thành
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Summary Modal */}
+      {showSummary && sessionSummary && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-xl text-center">
+            <div className="text-6xl mb-4">🎉</div>
+            <h2 className="font-bold text-2xl text-gray-900 mb-2">Hoàn thành bài học!</h2>
+            <p className="text-gray-500 mb-6">Chúc mừng bạn đã hoàn thành phiên luyện tập</p>
+
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-green-50 rounded-xl p-4">
+                <p className="text-3xl font-bold text-green-600">{sessionSummary.score}</p>
+                <p className="text-sm text-gray-600">Điểm số</p>
+              </div>
+              <div className="bg-blue-50 rounded-xl p-4">
+                <p className="text-3xl font-bold text-blue-600">+{sessionSummary.xp_earned}</p>
+                <p className="text-sm text-gray-600">XP nhận được</p>
+              </div>
+              <div className="bg-purple-50 rounded-xl p-4">
+                <p className="text-3xl font-bold text-purple-600">{sessionSummary.duration_minutes}</p>
+                <p className="text-sm text-gray-600">Phút luyện tập</p>
+              </div>
+              <div className="bg-orange-50 rounded-xl p-4">
+                <p className="text-3xl font-bold text-orange-600">{sessionSummary.messages_count}</p>
+                <p className="text-sm text-gray-600">Tin nhắn</p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => router.push('/learner/scenarios')}
+              className="w-full px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition font-semibold"
+            >
+              Quay lại danh sách
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

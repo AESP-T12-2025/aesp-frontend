@@ -1,13 +1,15 @@
 "use client";
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Users, Mic, MicOff, MessageCircle, Send, UserPlus, Loader2, X, LogOut, Phone, PhoneOff } from 'lucide-react';
+import { Users, Mic, MicOff, MessageCircle, Send, UserPlus, Loader2, X, LogOut, Phone, PhoneOff, Bot, Copy, Check, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '@/lib/api';
 
 interface Message {
     type: string;
     from_user_id?: number;
     content?: string;
     timestamp?: string;
+    isAI?: boolean;  // AI helper message
 }
 
 interface Partner {
@@ -39,6 +41,11 @@ export default function PeerPracticePage() {
     // Voice chat state
     const [voiceStatus, setVoiceStatus] = useState<'idle' | 'requesting' | 'incoming' | 'connecting' | 'active'>('idle');
     const [isMuted, setIsMuted] = useState(false);
+
+    // AI Helper state
+    const [isAIMode, setIsAIMode] = useState(false);
+    const [isAILoading, setIsAILoading] = useState(false);
+    const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
     const wsRef = useRef<WebSocket | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -108,8 +115,8 @@ export default function PeerPracticePage() {
         setStatus('connecting');
         setSearchTime(0);
 
-        // Use production URL or localhost based on environment
-        const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        // Use env URL or production backend as default
+        const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://aesp-backend.onrender.com';
         const wsProtocol = apiBase.startsWith('https') ? 'wss' : 'ws';
         const wsHost = apiBase.replace(/^https?:\/\//, '');
         const wsUrl = `${wsProtocol}://${wsHost}/peer/ws/${token}`;
@@ -393,19 +400,87 @@ export default function PeerPracticePage() {
     // =========================================================================
 
     const sendMessage = () => {
-        if (!inputText.trim() || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+        if (!inputText.trim()) return;
 
-        sendWsMessage({ type: 'chat', content: inputText.trim() });
+        if (isAIMode) {
+            // Send to AI for help
+            askAI(inputText.trim());
+        } else {
+            // Send to partner via WebSocket
+            if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
 
-        setMessages(prev => [...prev, {
-            type: 'chat',
-            from_user_id: 0,
-            content: inputText.trim(),
-            timestamp: new Date().toISOString()
-        }]);
+            sendWsMessage({ type: 'chat', content: inputText.trim() });
+
+            setMessages(prev => [...prev, {
+                type: 'chat',
+                from_user_id: 0,
+                content: inputText.trim(),
+                timestamp: new Date().toISOString()
+            }]);
+        }
 
         setInputText('');
         inputRef.current?.focus();
+    };
+
+    // =========================================================================
+    // AI HELPER
+    // =========================================================================
+
+    const askAI = async (question: string) => {
+        setIsAILoading(true);
+
+        // Add user question to messages
+        setMessages(prev => [...prev, {
+            type: 'ai_question',
+            from_user_id: 0,
+            content: question,
+            timestamp: new Date().toISOString(),
+            isAI: true
+        }]);
+
+        try {
+            const topicName = TOPICS.find(t => t.id === sessionTopic)?.name || sessionTopic;
+            const response = await api.post('/ai/chat', {
+                message: question,
+                context: `You are a helpful English tutor. The user is practicing English conversation about "${topicName}" with a peer. They need help expressing something in English. Give them 2-3 natural English expressions they can use. Be concise and practical. If they write in Vietnamese, understand what they want to say and provide English translations/expressions.`
+            });
+
+            setMessages(prev => [...prev, {
+                type: 'ai_response',
+                content: response.data.reply,
+                timestamp: new Date().toISOString(),
+                isAI: true
+            }]);
+        } catch (error) {
+            console.error('AI error:', error);
+            setMessages(prev => [...prev, {
+                type: 'ai_response',
+                content: '❌ Không thể kết nối AI. Vui lòng thử lại.',
+                timestamp: new Date().toISOString(),
+                isAI: true
+            }]);
+        } finally {
+            setIsAILoading(false);
+        }
+    };
+
+    const copyToClipboard = async (text: string, index: number) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopiedIndex(index);
+            toast.success('Đã copy!');
+            setTimeout(() => setCopiedIndex(null), 2000);
+        } catch {
+            toast.error('Không thể copy');
+        }
+    };
+
+    const useAISuggestion = (text: string) => {
+        setInputText(text);
+        setIsAIMode(false);
+        inputRef.current?.focus();
+        toast.success('Đã dán vào ô chat!');
     };
 
     const cancelSearch = () => {
@@ -637,6 +712,22 @@ export default function PeerPracticePage() {
             {/* Chat Area */}
             <div className="flex-1 max-w-4xl mx-auto w-full p-4">
                 <div className="h-full bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col" style={{ minHeight: '500px' }}>
+                    {/* AI Mode Banner */}
+                    {isAIMode && (
+                        <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Bot size={18} />
+                                <span className="font-medium">Chế độ hỏi AI - Nhập tiếng Việt hoặc tiếng Anh để được gợi ý cách nói</span>
+                            </div>
+                            <button
+                                onClick={() => setIsAIMode(false)}
+                                className="flex items-center gap-1 px-3 py-1 bg-white/20 rounded-lg hover:bg-white/30 transition text-sm"
+                            >
+                                <ArrowLeft size={14} /> Quay lại chat
+                            </button>
+                        </div>
+                    )}
+
                     {/* Messages */}
                     <div className="flex-1 overflow-y-auto p-6 space-y-4">
                         {messages.map((msg, idx) => {
@@ -646,6 +737,55 @@ export default function PeerPracticePage() {
                                         <span className="px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm">
                                             {msg.content}
                                         </span>
+                                    </div>
+                                );
+                            }
+
+                            // AI Question (user asking AI)
+                            if (msg.type === 'ai_question') {
+                                return (
+                                    <div key={idx} className="flex justify-end">
+                                        <div className="max-w-[70%] p-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-br-md">
+                                            <div className="flex items-center gap-2 text-xs text-amber-100 mb-1">
+                                                <Bot size={12} /> Hỏi AI
+                                            </div>
+                                            <p>{msg.content}</p>
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            // AI Response
+                            if (msg.type === 'ai_response') {
+                                return (
+                                    <div key={idx} className="flex justify-start">
+                                        <div className="max-w-[80%] p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-bl-md">
+                                            <div className="flex items-center gap-2 text-xs text-amber-600 mb-2">
+                                                <Bot size={12} /> AI Gợi ý
+                                            </div>
+                                            <div className="text-gray-800 whitespace-pre-wrap">{msg.content}</div>
+
+                                            {/* Action buttons for AI response */}
+                                            <div className="flex gap-2 mt-3 pt-3 border-t border-amber-200">
+                                                <button
+                                                    onClick={() => copyToClipboard(msg.content || '', idx)}
+                                                    className="flex items-center gap-1 px-3 py-1.5 text-xs bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition"
+                                                >
+                                                    {copiedIndex === idx ? <Check size={12} /> : <Copy size={12} />}
+                                                    {copiedIndex === idx ? 'Đã copy' : 'Copy'}
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        // Extract first suggestion (usually first line or first sentence)
+                                                        const firstLine = (msg.content || '').split('\n')[0].replace(/^[\d.\-•*]+\s*/, '').replace(/^["']|["']$/g, '').trim();
+                                                        useAISuggestion(firstLine);
+                                                    }}
+                                                    className="flex items-center gap-1 px-3 py-1.5 text-xs bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition"
+                                                >
+                                                    <Send size={12} /> Dùng gợi ý
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 );
                             }
@@ -667,29 +807,70 @@ export default function PeerPracticePage() {
                                 </div>
                             );
                         })}
+
+                        {/* AI Loading */}
+                        {isAILoading && (
+                            <div className="flex justify-start">
+                                <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-bl-md">
+                                    <div className="flex items-center gap-2 text-amber-600">
+                                        <Loader2 size={16} className="animate-spin" />
+                                        <span className="text-sm">AI đang suy nghĩ...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div ref={messagesEndRef} />
                     </div>
 
                     {/* Input */}
                     <div className="border-t border-gray-100 p-4">
                         <div className="flex items-center gap-3">
+                            {/* AI Toggle Button */}
+                            <button
+                                onClick={() => setIsAIMode(!isAIMode)}
+                                className={`p-3 rounded-xl transition flex items-center gap-1 ${isAIMode
+                                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-amber-100 hover:text-amber-600'
+                                    }`}
+                                title={isAIMode ? 'Đang hỏi AI' : 'Hỏi AI gợi ý'}
+                            >
+                                <Bot size={20} />
+                            </button>
+
                             <input
                                 ref={inputRef}
                                 type="text"
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
                                 onKeyDown={handleKeyPress}
-                                placeholder="Type your message in English..."
-                                className="flex-1 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                placeholder={isAIMode
+                                    ? "Nhập điều bạn muốn nói (VD: làm sao để hỏi thăm sức khỏe?)..."
+                                    : "Type your message in English..."
+                                }
+                                className={`flex-1 px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 transition ${isAIMode
+                                    ? 'bg-amber-50 border-amber-200 focus:ring-amber-500'
+                                    : 'bg-gray-50 border-gray-200 focus:ring-purple-500'
+                                    }`}
                             />
                             <button
                                 onClick={sendMessage}
-                                disabled={!inputText.trim()}
-                                className="p-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:shadow-lg disabled:opacity-50 transition"
+                                disabled={!inputText.trim() || isAILoading}
+                                className={`p-3 text-white rounded-xl hover:shadow-lg disabled:opacity-50 transition ${isAIMode
+                                    ? 'bg-gradient-to-r from-amber-500 to-orange-500'
+                                    : 'bg-gradient-to-r from-purple-600 to-blue-600'
+                                    }`}
                             >
-                                <Send size={20} />
+                                {isAILoading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
                             </button>
                         </div>
+
+                        {/* AI Mode Hint */}
+                        {!isAIMode && (
+                            <p className="text-xs text-gray-400 mt-2 text-center">
+                                💡 Không biết nói gì? Bấm <Bot size={12} className="inline" /> để hỏi AI gợi ý cách diễn đạt
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>

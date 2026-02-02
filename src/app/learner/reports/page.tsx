@@ -16,7 +16,7 @@ interface HeatMapDay {
 }
 
 interface AnalyticsStats {
-    totalHours: number;
+    totalMinutes: number;
     scenariosCompleted: number;
     avgScore: number;
     streak: number;
@@ -25,7 +25,7 @@ interface AnalyticsStats {
     feedback: FeedbackItem[];
     heatMap: HeatMapDay[];
     comparison?: {
-        prevMonthHours: number;
+        prevMonthMinutes: number;
         diff: number;
     };
 }
@@ -172,12 +172,12 @@ export default function ReportsPage() {
                                     Thời gian học
                                 </div>
                                 <div>
-                                    <p className="text-3xl font-black text-slate-900 tracking-tight">{stats?.totalHours || 0}h</p>
+                                    <p className="text-3xl font-black text-slate-900 tracking-tight">{stats?.totalMinutes || 0} phút</p>
                                     <div className="w-full bg-slate-100 h-2 rounded-full mt-4 overflow-hidden">
                                         <div className="h-full bg-blue-500 w-[70%] rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
                                     </div>
                                     {viewMode === 'MONTHLY' && stats.comparison && (
-                                        <p className="text-xs text-slate-400 mt-2 font-bold">So với tháng trước: {stats.comparison.diff > 0 ? '+' : ''}{stats.comparison.diff}h</p>
+                                        <p className="text-xs text-slate-400 mt-2 font-bold">So với tháng trước: {stats.comparison.diff > 0 ? '+' : ''}{stats.comparison.diff} phút</p>
                                     )}
                                 </div>
                             </div>
@@ -221,7 +221,7 @@ export default function ReportsPage() {
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* CHART REFACTOR */}
-                        <div className="lg:col-span-2 bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm flex flex-col">
+                        <div className="lg:col-span-3 bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm flex flex-col">
                             <div className="flex justify-between items-center mb-8">
                                 <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
                                     <div className="p-2 bg-blue-50 text-[#007bff] rounded-xl"><Activity size={20} /></div>
@@ -248,7 +248,7 @@ export default function ReportsPage() {
                                         <div key={i} className="flex-1 min-w-[20px] flex flex-col items-center gap-3 group relative z-10 h-full justify-end">
                                             {/* Tooltip */}
                                             <div className="opacity-0 group-hover:opacity-100 transition-all absolute -top-12 bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap z-20 pointer-events-none transform translate-y-2 group-hover:translate-y-0">
-                                                {hours} giờ
+                                                {hours} phút
                                                 <div className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45"></div>
                                             </div>
                                             {/* Bar */}
@@ -268,29 +268,7 @@ export default function ReportsPage() {
                             </div>
                         </div>
 
-                        {/* AI FEEDBACK (Reuse) */}
-                        <div className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm flex flex-col">
-                            {/* ... same as before, simplified reuse ... */}
-                            <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
-                                <div className="p-2 bg-purple-50 text-purple-600 rounded-xl"><Target size={20} /></div>
-                                AI Coach
-                            </h3>
-                            <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar max-h-[300px]">
-                                {stats?.feedback?.length ? stats.feedback.map((item: any, i: number) => (
-                                    <div key={i} className={`p-4 rounded-2xl border transition-all hover:bg-white hover:shadow-md group ${item.type === 'strength' ? 'bg-green-50/50 border-green-100 hover:border-green-200' : 'bg-red-50/50 border-red-100 hover:border-red-200'}`}>
-                                        <div className="flex items-start gap-3">
-                                            <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 shadow-sm ${item.type === 'strength' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'}`}>
-                                                {item.type === 'strength' ? <CheckCircle size={14} /> : <XCircle size={14} />}
-                                            </div>
-                                            <p className="text-sm font-bold leading-relaxed text-slate-700">{item.text}</p>
-                                        </div>
-                                    </div>
-                                )) : <p className="text-slate-500 font-medium">Chưa có đánh giá.</p>}
-                            </div>
-                            <Link href="/learner/scenarios" className="w-full mt-6 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-1">
-                                Luyện tập ngay <ChevronRight size={16} />
-                            </Link>
-                        </div>
+
                     </div>
 
                     {/* HEAT MAP CALENDAR (Keep logic similar) */}
