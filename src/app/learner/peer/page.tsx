@@ -244,27 +244,35 @@ export default function PeerPracticePage() {
     const createPeerConnection = () => {
         const config: RTCConfiguration = {
             iceServers: [
+                // STUN servers
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                // Free TURN servers from OpenRelay
+                { urls: 'stun:stun.relay.metered.ca:80' },
+                // Metered.ca Free TURN servers (more reliable)
                 {
-                    urls: 'turn:openrelay.metered.ca:80',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
+                    urls: 'turn:a.relay.metered.ca:80',
+                    username: 'e8dd65d92ae757e45648c815',
+                    credential: '2sPuHjT4Y+VmhLWn'
                 },
                 {
-                    urls: 'turn:openrelay.metered.ca:443',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
+                    urls: 'turn:a.relay.metered.ca:80?transport=tcp',
+                    username: 'e8dd65d92ae757e45648c815',
+                    credential: '2sPuHjT4Y+VmhLWn'
                 },
                 {
-                    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
+                    urls: 'turn:a.relay.metered.ca:443',
+                    username: 'e8dd65d92ae757e45648c815',
+                    credential: '2sPuHjT4Y+VmhLWn'
+                },
+                {
+                    urls: 'turns:a.relay.metered.ca:443?transport=tcp',
+                    username: 'e8dd65d92ae757e45648c815',
+                    credential: '2sPuHjT4Y+VmhLWn'
                 }
             ],
-            iceCandidatePoolSize: 10
+            iceCandidatePoolSize: 10,
+            // Try relay candidates first for better connectivity
+            iceTransportPolicy: 'all'
         };
 
         const pc = new RTCPeerConnection(config);
@@ -289,10 +297,20 @@ export default function PeerPracticePage() {
                 setVoiceStatus('active');
                 toast.success("🎙️ Voice chat đã kết nối!");
             } else if (pc.iceConnectionState === 'failed') {
-                toast.error("Không thể kết nối voice chat. Vui lòng thử lại.");
-                cleanupVoice();
+                console.log('❌ ICE connection failed, attempting restart...');
+                // Try ICE restart
+                pc.restartIce();
+                toast("Đang thử kết nối lại...", { icon: '🔄' });
             } else if (pc.iceConnectionState === 'disconnected') {
-                toast("Voice chat bị gián đoạn...", { icon: '⚠️' });
+                console.log('⚠️ ICE disconnected, waiting for recovery...');
+                toast("Voice chat bị gián đoạn, đang kết nối lại...", { icon: '⚠️', id: 'voice-reconnect' });
+                // Give it 5 seconds to recover before cleanup
+                setTimeout(() => {
+                    if (peerConnectionRef.current?.iceConnectionState === 'disconnected') {
+                        console.log('❌ ICE still disconnected after timeout, restarting...');
+                        peerConnectionRef.current.restartIce();
+                    }
+                }, 5000);
             }
         };
 
